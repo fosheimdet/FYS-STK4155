@@ -1,18 +1,31 @@
 import numpy as np
 from sklearn.utils import resample
+from sklearn.model_selection import KFold
+from sklearn.linear_model import LinearRegression
 
-from functions import getMSE,getR2,StandardPandascaler
-from regression_methods import OLS
+from functions import OLS,ridge,lasso,desMat,getScores,addNoise,getMSE,getR2,StandardPandascaler
+from regression_methods import linReg
+
+
 
 
 
 #===============================================================================
-#
 #===============================================================================
-def crossValidation(X,z,f,K,shuffle):
-    #Scale the data:
+def crossValidation(regMeth,scoreNames,X,z,K,sigma,shuffle,sklearnOLS,sklearnCV,lam):
+
+    #Scores from each fold will be stored as row vectors in crossValScores
+    crossValScores = np.zeros((K,len(scoreNames)))
+
+
     X = StandardPandascaler(X)
-    #Reshape to column vector if z is given as a row vector
+    f = z #Target function
+    z_temp = addNoise(z,sigma)
+    z=z_temp
+
+    n = int(np.sqrt(len(z)))
+    Z_orig = z.reshape(n,n)
+
     if(z.shape[0]==1):
         z.reshape(-1,1)
         f.reshape(-1,1)
@@ -24,64 +37,60 @@ def crossValidation(X,z,f,K,shuffle):
         z = z[indices]
         f = f[indices]
 
-    n_test = int(n/K) #Number of data points in the test set
-    remainder = np.mod(n,K)
+    beta_hat = np.zeros((X.shape[1],1))#Initialize the optimal reg. param. vector
+    #beta_hat = np.zeros(X.shape[1])#Initialize the optimal reg. param. vector
 
-    MSEtest_vec =np.zeros(K)
-    bias_vec = np.zeros(K)
-    variance_vec = np.zeros(K)
-    cov_vec = np.zeros(K)     #Covariance of z_test and z_pred, an approx of cov(f_test,z_pred)
-    R2test_vec = np.zeros(K)
+    if(sklearnCV==False):
+        for i in range(0,K):
+            n_samp = int(n/K) #number of datapoints in each of the K samples
+            z_train = np.concatenate((z[:(i)*n_samp], z[(i+1)*n_samp:]),axis=0) #Concatenate vertically
+            z_test = z[(i)*n_samp:(i+1)*n_samp]
+            f_train = np.concatenate((f[:(i)*n_samp], f[(i+1)*n_samp:]),axis=0) #Concatenate vertically
+            f_test = f[(i)*n_samp:(i+1)*n_samp]
+            X_train = np.concatenate((X[:i*n_samp,:], X[(i+1)*n_samp:,:]),axis=0)
+            X_test = X[i*n_samp:(i+1)*n_samp,:]
 
-    for i in range(0,K):
-        n_samp = int(n/K) #number of datapoints in each of the K samples
-        z_train = np.concatenate((z[:(i)*n_samp], z[(i+1)*n_samp:]),axis=0) #Concatenate vertically
-        z_test = z[(i)*n_samp:(i+1)*n_samp]
+            if(regMeth=='OLS'):
+                beta_hat= OLS(X_train,z_train,sklearnOLS)
+            if(regMeth=='ridge'):
+                beta_hat= ridge(X_train,z_train,lam)
+            if(regMeth=='lasso'):
+                beta_hat= lasso(X_train,z_train,lam)
 
-        f_train = np.concatenate((f[:(i)*n_samp], f[(i+1)*n_samp:]),axis=0) #Concatenate vertically
-        f_test = f[(i)*n_samp:(i+1)*n_samp]
+            z_tilde = X_train@beta_hat
+            z_predict = X_test@beta_hat
 
-        X_train = np.concatenate((X[:i*n_samp,:], X[(i+1)*n_samp:,:]),axis=0)
-        X_test = X[i*n_samp:(i+1)*n_samp,:]
-
-        beta = np.linalg.pinv(X_train.T@X_train)@X_train.T@z_train
-        z_tilde = X_train@beta
-        z_predict = X_test@beta
-
-        EZ_tilde = np.mean(z_predict)
-        MSE_test = getMSE(z_test,z_predict)
-        bias = getMSE(f_test,EZ_tilde)
-        variance = getMSE(z_predict,EZ_tilde)
-        cov = np.cov(f_test,z_predict)[0,1] #We use z_test as an approximation for f_test
-        R2_test = getR2(z_test,z_predict)
+            scoreValues = getScores(scoreNames,z_test,f_test,z_train,z_predict,z_tilde)
+            for ind,score in enumerate(scoreNames):
+                crossValScores[i,ind] = scoreValues[ind]
 
 
-    #     EZ_tilde = np.mean(z_predict)
-    #     MSE_test = getMSE(z_test,z_predict)
-    #     bias =getMSE(f_test,EZ_tilde)
-    #     #bias =getMSE(z_test,EZ_tilde)
-    #     variance =getMSE(z_predict,EZ_tilde)
-    # cov_f_ytilde= np.cov(f_test.reshape(1,-1),z_predict.reshape(1,-1))[0,1]
+    elif(sklearnCV==True):
+        kf = KFold(n_splits=K)
+        i = 0
+        for train_index, test_index in kf.split(z):
+            z_train = z[train_index]
+            z_test = z[test_index]
+            f_train = f[train_index]
+            f_test = f[test_index]
+            X_train = X[train_index,:]
+            X_test = X[test_index,:]
 
-        MSEtest_vec[i]=MSE_test
-        bias_vec[i] = bias
-        variance_vec[i] = variance
-        cov_vec[i] = cov
-        R2test_vec[i] = R2_test
+            LR = LinearRegression()
+            LR.fit(X_train,z_train)
+            z_tilde = LR.predict(X_train)
+            z_predict = LR.predict(X_test)
 
+            scoreValues = getScores(scoreNames,z_test,f_test,z_train,z_predict,z_tilde)
+            for ind,score in enumerate(scoreNames):
+                crossValScores[i,ind] = scoreValues[ind]
 
+            i+=1
 
-        # bias[i],variance[i],X,Z_orig,Z_tilde,beta_hat,MSE[i],R2_test, \
-        # MSE_train, R2_train, var_beta = OLS(xr,yr,Z,order,True,0)
+    scoreMeans = np.mean(crossValScores,0)
+    scoreVars = np.var(crossValScores,0)
 
-
-    R2test_vec = np.array(R2test_vec)
-    MSEtest_vec = np.array(MSEtest_vec)
-    # print("R2-Score_OLS: %0.3f (+/- %0.3f)" % (R2test_vec.mean(), R2test_vec.std() * 2))
-    # print("MSE-Score_OLS: %0.5f (+/- %0.5f)" % (MSEtest_vec.mean(), MSEtest_vec.std() * 2))
-    return np.mean(MSEtest_vec), np.mean(bias_vec), np.mean(variance_vec), \
-    np.mean(R2test_vec),np.mean(cov_vec)
-
+    return scoreMeans,scoreVars
 
 #===============================================================================
 #===============================================================================
@@ -89,37 +98,131 @@ def crossValidation(X,z,f,K,shuffle):
 
 #===============================================================================
 #===============================================================================
-def bootstrap(xr,yr,z,B,order,sigma,scaled,sklearn): #z is the original data sample and B is the number of bootstrap samples
+def bootstrap(regMeth,scoreNames,X,z,B,sigma,scaling,sklearn,lam): #z is the original data sample and B is the number of bootstrap samples
     n = len(z)
-    bias_vec =np.zeros(B)
-    variance_vec = np.zeros(B)
-    MSEtest_vec = np.zeros(B)
-    cov_f_ytilde_vec = np.zeros(B)
+    #Scores from each bootstrap cycle will be stored as row vectors in bootScores
+    bootScores = np.zeros((B,len(scoreNames)))
 
-    for bCycle in range(0,B):
+    for b in range(0,B):  #Loop through bootstrap cycles
         z_star = np.zeros(n)
-        for j in range(0,n):
-            z_star[j] = z[np.random.randint(0,n-1)]
-        #z_star = resample(z)
-        Z = z_star.reshape(int(np.sqrt(n)),int(np.sqrt(n)))
+        X_star = np.zeros((n,X.shape[1]))
+        #Form a bootstrap sample,z_star, by drawing w. replacement from the original sample
+        # zStarIndeces = np.random.randint(0,n,z.shape)
+        # z_star = z[zStarIndeces]
+        for i in range(0,n):
+            zInd = np.random.randint(0,n)
+            z_star[i] = z[zInd]
+            X_star[i,:] = X[zInd,:]
 
-        cov_f_ytilde,bias,variance,X,Z_orig,Z_tilde,beta_hat,MSE_test,R2_test, \
-        MSE_train, R2_train, var_beta = OLS(xr,yr,Z,order,sigma,scaled,sklearn)
-        # We use sigma=0 since the noise is alrdy included in z
-        bias_vec[bCycle] = bias
-        variance_vec[bCycle] = variance
-        MSEtest_vec[bCycle] = MSE_test
-        cov_f_ytilde_vec[bCycle] = cov_f_ytilde
+        scoreValues = linReg(regMeth,scoreNames,X_star,z_star,sigma,scaling,sklearn,lam)[0]
+        for ind,score in enumerate(scoreNames):
+            bootScores[b,ind] = scoreValues[ind]
+
+    scoreMeans = np.mean(bootScores,0)
+    scoreVars = np.var(bootScores,0)
 
 
 
-    MSEtest_mean = np.mean(MSEtest_vec)
-    MSEtest_var = np.var(MSEtest_vec)
-    bias_mean = np.mean(bias_vec)
-    bias_var = np.var(bias_vec)
-    variance_mean = np.mean(variance_vec)
-    variance_var = np.var(variance_vec)
-    covariance_mean = np.mean(cov_f_ytilde)
-    return MSEtest_mean,MSEtest_var,bias_mean,bias_var,variance_mean,variance_var,covariance_mean
+    return scoreMeans,scoreVars
 #===============================================================================
 #===============================================================================
+
+
+
+
+# #===============================================================================
+# #
+# #===============================================================================
+# def crossValidation(X,z,K,sigma,shuffle,sklearnOLS,sklearnCV,regMeth,lam):
+#     #Scale the data:
+#     #X = desMat(xr,yr,order)
+#
+#     X = StandardPandascaler(X)
+#     f = z #Target function
+#     z = addNoise(z,sigma)
+#     if(z.shape[0]==1):
+#         z.reshape(-1,1)
+#         f.reshape(-1,1)
+#     n =len(z) #Total number of datapoints
+#     if(shuffle==True):
+#         indices = np.arange(n)
+#         np.random.shuffle(indices) #Shuffle the indixes and use this to shuffle X and z
+#         X = X[indices,:]
+#         z = z[indices]
+#         f = f[indices]
+#
+#     bias_vec = np.zeros(K)
+#     variance_vec = np.zeros(K)
+#     cov_vec = np.zeros(K)     #Covariance of z_test and z_pred, an approx of cov(f_test,z_pred)
+#     MSEtest_vec =np.zeros(K)
+#     MSEtrain_vec = np.zeros(K)
+#     R2test_vec = np.zeros(K)
+#     R2train_vec = np.zeros(K)
+#
+#     beta_hat = np.zeros((X.shape[1],1))#Initialize the optimal reg. param. vector
+#
+#     if(sklearnCV==False):
+#         for i in range(0,K):
+#             n_samp = int(n/K) #number of datapoints in each of the K samples
+#             z_train = np.concatenate((z[:(i)*n_samp], z[(i+1)*n_samp:]),axis=0) #Concatenate vertically
+#             z_test = z[(i)*n_samp:(i+1)*n_samp]
+#
+#             f_train = np.concatenate((f[:(i)*n_samp], f[(i+1)*n_samp:]),axis=0) #Concatenate vertically
+#             f_test = f[(i)*n_samp:(i+1)*n_samp]
+#
+#             X_train = np.concatenate((X[:i*n_samp,:], X[(i+1)*n_samp:,:]),axis=0)
+#             X_test = X[i*n_samp:(i+1)*n_samp,:]
+#
+#             if(regMeth=='OLS'):
+#                 beta_hat= OLS(X_train,z_train,sklearnOLS)
+#             if(regMeth=='ridge'):
+#                 beta_hat= ridge(X_train,z_train,lam)
+#             if(regMeth=='lasso'):
+#                 beta_hat= lasso(X_train,z_train)
+#             #beta_hat = ridge(X_train,z_train,lambda)
+#             #beta_hat = lasso(X_train,z_train,lambda)
+#             z_tilde = X_train@beta_hat
+#             z_predict = X_test@beta_hat
+#
+#             bias_vec[i],variance_vec[i],cov_vec[i],MSEtest_vec[i],MSEtrain_vec[i]\
+#             ,R2test_vec[i],R2train_vec[i] = getScores(z_test,f_test,z_train,z_predict,z_tilde)
+#
+#     elif(sklearnCV==True):
+#         kf = KFold(n_splits=K)
+#         i = 0
+#         for train_index, test_index in kf.split(z):
+#             #print(train_index,test_index)
+#             z_train = z[train_index]
+#             z_test = z[test_index]
+#
+#             f_train = f[train_index]
+#             f_test = f[test_index]
+#
+#             X_train = X[train_index,:]
+#             X_test = X[test_index,:]
+#
+#             LR = LinearRegression()
+#             LR.fit(X_train,z_train)
+#             z_tilde = LR.predict(X_train)
+#             z_predict = LR.predict(X_test)
+#
+#             bias_vec[i],variance_vec[i],cov_vec[i],MSEtest_vec[i],MSEtrain_vec[i]\
+#             ,R2test_vec[i],R2train_vec[i] = getScores(z_test,f_test,z_train,z_predict,z_tilde)
+#             i+=1
+#
+#     bias = np.mean(bias_vec)
+#     var = np.mean(variance_vec)
+#     cov = np.mean(cov_vec)
+#     MSEtest = np.mean(MSEtest_vec)
+#     MSEtrain = np.mean(MSEtrain_vec)
+#     R2test = np.mean(R2test_vec)
+#     R2train = np.mean(R2train_vec)
+#
+#
+#     R2test_vec = np.array(R2test_vec)
+#     MSEtest_vec = np.array(MSEtest_vec)
+#
+#     return bias,var,cov,MSEtest,MSEtrain,R2test,R2train
+#
+# #===============================================================================
+# #===============================================================================
