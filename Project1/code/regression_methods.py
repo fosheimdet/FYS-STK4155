@@ -6,40 +6,17 @@ from functions import OLS,ridge,lasso,getScores,addNoise,FrankeFunction,\
 desMat,getMSE,getR2,StandardPandascaler
 
 
-
-def linReg(regMeth,scoreNames,X,z,sigma,scaling,skOLS,lmd):
-
-    #X = desMat(xr,yr,order)
+def linReg(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS):
 
     n = int(np.sqrt(len(z)))    #Number ticks of x and y axes
-
-    z = z
-    f = np.zeros(n*n)
-    f=z                    #Target function
-      #Save original values for plotting
-    #z = addNoise(z,sigma)    #Add normally distributed noise w. std sigma
-    # z_temp = z
-    # z_temp = addNoise(z,sigma)
-    # z=z_temp
-
-    # z_noise = np.zeros(n*n)
-    # for i in range(0,n*n):
-    #     epsilon = np.random.normal(0,sigma)
-    #     z_noise[i] = z[i] + epsilon
-    #     #print(epsilon)
-    # z=z_noise
-
+    f=z   #Target function. In the case of terrain data, these are the same.
+    #Add noise:
     z_temp = addNoise(z,sigma)
     z = z_temp
+    z_noisy = z
 
-    Z_orig = z.reshape(n,n)
-    # print(z)
-
-    z = z.reshape(-1,1)
-    f = f.reshape(-1,1)
-
-
-    #z_noise = 0
+    # z = z.reshape(-1,1)
+    # f = f.reshape(-1,1)
 
 
     if(scaling):
@@ -66,15 +43,14 @@ def linReg(regMeth,scoreNames,X,z,sigma,scaling,skOLS,lmd):
     z_fitted = X@beta_hat  #Fit all data
 
     #For plotting the fitted function
-    Z_tilde = z_fitted.reshape(n,n)
+    #Z_tilde = z_fitted.reshape(n,n)
 
 
     scoreValues = getScores(scoreNames,z_test,f_test,z_train,z_predict,z_tilde)
 
     var_beta = np.diagonal(np.linalg.pinv(X.T@X)*sigma**2) #Should you use X or X_train/X_test?
 
-    z = 0
-    return [scoreValues,Z_orig,Z_tilde,beta_hat,var_beta]
+    return [scoreValues,z_noisy,z_fitted,beta_hat,var_beta]
 
     # return [bias,variance,cov,MSEtest,MSEtrain,R2test,R2train,Z_orig,
     # Z_tilde,beta_hat,var_beta]

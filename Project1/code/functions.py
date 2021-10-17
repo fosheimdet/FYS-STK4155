@@ -37,7 +37,7 @@ def lasso(X,z,lmd):
     #max_iter=1e4 #default max_iter is 1e3
     #tol=0.0001 #default os 0.0001?
     regLasso = linear_model.Lasso\
-    (lmd,fit_intercept=False,tol = 0.001,max_iter = 1000)
+    (lmd,fit_intercept=False,tol = 0.001,max_iter = 10000)
     #
     # regLasso=linear_model.Lasso(alpha=0.015, fit_intercept=False, tol=0.0001,
     #       max_iter=10000, positive=True)
@@ -140,7 +140,7 @@ def R2(y_data, y_model):
     return 1 - np.sum((y_data - y_model) ** 2) / np.sum((y_data - np.mean(y_data)) ** 2)
 
 
-def bias(f_test,Ez): return getMSE(f_test, Ez)
+def bias(z_test,Ez): return getMSE(z_test, Ez)
 def variance(z_predict, Ez): return getMSE(z_predict, Ez)
 def cov(f_test, z_predict): return np.cov(f_test.reshape(1,-1),z_predict.reshape(1,-1))[0,1]
 def MSEtest(z_test, z_predict): return getMSE(z_test, z_predict)

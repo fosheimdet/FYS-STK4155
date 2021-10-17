@@ -25,10 +25,48 @@ from functions import OLS,ridge,lasso,FrankeFunction,desMat,getMSE,getR2,addNois
 from regression_methods import linReg
 from resampling_methods import bootstrap,crossValidation
 
-from plotting import MasterFunction
-from misc import surfacePlotter,beta_CI
+from calculate_errors import scoreCalculator
+from plotters import scorePlotter,surfacePlotter,beta_CI
+#from do_project import doProject
 
 
+def pick_n(n_f,n_t,terrainBool):
+    n=n_f
+    if(terrainBool):
+        n=n_t
+    return n
+
+def generateDesMatPars(terrainBool,n):
+    if(terrainBool):
+        #Get terrain data:
+        terrain = imread('SRTM_data_Norway_2.tif')
+        terrain = terrain[:n,:n]
+        x = np.linspace(0,1, np.shape(terrain)[0])
+        y = np.linspace(0,1, np.shape(terrain)[1])
+        xx, yy = np.meshgrid(x,y)           # Creates mesh of image pixels
+        Z = terrain
+        z = np.ravel(Z)#Has inherent noise
+    else:
+        x = np.linspace(0,1,n)
+        y = np.linspace(0,1,n)
+        xx, yy = np.meshgrid(x,y)
+        Z = FrankeFunction(xx,yy)
+        z= np.ravel(Z)         #Original z values of Franke's function without noise
+
+    xr = np.ravel(xx)
+    yr = np.ravel(yy)
+    # f = z #Target function. In the case of Franke, it is know, and so we can calculate the true bias
+    return (xr,yr,z)
+
+def plotter():
+    scorePlotter(terrainBool,savePlot,calcRes,calcAtts) #Plots the result
+    if(sigmasBool == False and plotTypeInt == 0):
+        savePlot = False
+        z_temp = z
+        sigma,order, lmd = hyperPars
+        z = addNoise(z_temp,hyperPars[0][0])
+        Z = z.reshape(n,n)
+        surfacePlotter(xx,yy,Z,savePlot,Z_tilde,order[0],sigma[0],regMeth,lmd[0])
 
 def getScores(*args):
     allScores = [['bias'],['variance'],['MSEtest'],['MSEtrain'],['R2test'],['R2train']]
@@ -40,347 +78,212 @@ def getScores(*args):
             scores.pop(scores.index(s))
     return scores
 
-def setIndVars(n,maxOrder,order_s, lambda_s, sigmasBool, plotTypeInt):
-    #                          ordersBool,lambdasBool
-    only_sigmas  =   [sigmasBool,  False,  False]
-    errorVSorder  =  [sigmasBool,  True,   False]
-    errorVSlambda = [sigmasBool,  False,  True]
-    heatmap =       [sigmasBool,  True,   True]
+# Sets sigma, the polynomial degree (order) and lambda to be either
+# a range of values (hyperPar_v) or just one default value, hyperPar_s
+def setHyperPars(n,setSigs,setOrds,setLmds,sigmasBool, plotTypeInt):
+    #               sigmasBool, ordersBool , lambdasBool
+    only_sigmas   =[sigmasBool,   False    ,   False   ]
+    errorVSorder  =[sigmasBool,   True     ,   False   ]
+    errorVSlambda =[sigmasBool,   False    ,   True    ]
+    heatmap       =[sigmasBool,   True     ,   True    ]
 
     plotTypes = [only_sigmas,errorVSorder,errorVSlambda,heatmap]
 
     ordersBool  = plotTypes[plotTypeInt][1]
     lambdasBool = plotTypes[plotTypeInt][2]
 
-    #S = 4/(n**2) #Is equal to 0.01 when n=20
-    S = 40/(n**2) #Is equal to 0.1 when n=20
-    sigma_v, sigma_s    = [0.5*S,S,2*S,5*S], [S]
-    order_v, order_s   = np.arange(0,maxOrder+1,1), order_s
-    lexp_v, lexp_s = np.double(np.arange(-15,15+1,1)), lambda_s
-    #lambdas = np.logspace(-4, 0, nlambdas)
+    sigma_v, sigma_s    = setSigs
+
+    order_s, minOrder, maxOrder = setOrds
+    order_v  = np.arange(minOrder,maxOrder+1,1)
+
+    lambda_s, minLoglmd, maxLoglmd = setLmds
+    nLambdas= 2*(np.abs(minLoglmd-maxLoglmd))  #Number of elements for the lambda vector
+    lambda_v = np.logspace(minLoglmd, maxLoglmd+1, nLambdas )
+    # loglambda_v = np.arange(minLoglmd,maxLoglmd+0.2,0.2)
+    # lambda_v = pow(10,loglambda_v)
+    lmdInc = 0.5
+    lambda_v = np.arange(minLoglmd,maxLoglmd+lmdInc,lmdInc)
 
     sigmas = sigma_v if sigmasBool else sigma_s
     if(ordersBool== False and lambdasBool == False):      #0
-        orders = order_s
-        loglambdas = lexp_s
+        orders =  order_s
+        lambdas = lambda_s
     if(ordersBool==True and lambdasBool == False):        #1
         orders = order_v
-        loglambdas = lexp_s
+        lambdas= lambda_s
     if(ordersBool==False and lambdasBool == True):        #2
         orders = order_s
-        loglambdas = lexp_v
+        lambdas= lambda_v
     if(ordersBool==True and lambdasBool == True):         #3
         orders = order_v
-        loglambdas = np.double(np.arange(-6,1+0.5,0.5))
-        #loglambdas = no.logspace(-6,0,10)
+        lambdas= lambda_v
 
-    return sigmas,orders,loglambdas
-
-
-def main():
-    np.random.seed(420)
-
-    terrainBool = False
-    if(terrainBool):
-        terrain = imread('SRTM_data_Norway_2.tif')
-
-        n = 100 #Number of points along the x/y axis
-        terrain = terrain[:n,:n]
-
-        x = np.linspace(0,1, np.shape(terrain)[0])
-        y = np.linspace(0,1, np.shape(terrain)[1])
-        xx, yy = np.meshgrid(x,y)           # Creates mesh of image pixels
-        Z = terrain
-        z = np.ravel(Z)          #Original noisy
-        #Target function(not known in this case). The bias will therefore be estimated
-        #by using the original data in place of the target function. Since we won't add further
-        #noise to z, f=z throughout the code.
-        f = z
-        xr = np.ravel(xx)
-        yr = np.ravel(yy)
-
-        # Show the terrain
-        # plt.figure()
-        # plt.title('Terrain over Norway 1')
-        # plt.imshow(terrain, cmap='gray')
-        # plt.xlabel('X')
-        # plt.ylabel('Y')
-        # plt.show()
-
+    if(len(lambdas)>1):
+        lambdas = pow(10,lambdas)
     else:
-        n = 20 #Number of ticks for x and y axes. We set Sigma to scale as 1/n^2 as discussed in the report
+        lmdTemp = pow(10,lambdas[0])
+        lambdas = [lmdTemp]
+    #print(lambdas)
+    return sigmas,orders,lambdas
 
-        x = np.linspace(0,1,n)
-        y = np.linspace(0,1,n)
-        xx, yy = np.meshgrid(x,y)
-        Z = FrankeFunction(xx,yy)
-        z = np.ravel(Z)         #Original z values of Franke's function without noise
-        f = z                   #Target function. In this case it is know, and so we can calculate the true bias
-        xr = np.ravel(xx)
-        yr = np.ravel(yy)
-
-
-
-    #===============================================================================
-    #===============================================================================
-
-
-    scaling = False
-    skOLS = False  #Use sklearn in OLS (rather than pseudoinverse)?
-    skCV = False   #Use sklearn's cross validation contra own code?
-
-    nBoot = 10 #Number of bootstrap samples
-    K = 5   #Number of folds in cross validation alg.
-    shuffle = True  #Shuffle the data before performing folds?
-
-
+#==============================================================================================================================
+#================================ MAIN FUNCTION ===============================================================================
+#==============================================================================================================================
+def main():
+    # xr,yr,z,f=generateDesMatPars(False,1000)
+    # surfacePlotter(False,False,xr,yr,z)
+    np.random.seed(420)
 #================================================================================================================================================
-#=============== Perform surface plot of either chosen data (terrain or Franke function) ========================================================
-    m_sigma = 0.1
-    if(terrainBool):
-        m_sigma = 0
-    m_scaling = False
-    m_skOLS = False
-    m_lambda =  1e-3
-    m_regMeth = 'OLS'
-    m_savePlot = False
-    m_order = 5
-
-    alpha = 0.05
-
-    X = desMat(xr,yr,m_order)
-    #regMeth = regMethods[1]
-
-    scorevalues,Z_orig,Z_tilde,beta_hat,var_hat\
-     = linReg(m_regMeth,getScores(4,5),X,z,m_sigma,m_scaling,m_skOLS,m_lambda)
-
-    #             (xx,yy,Z_orig,Z_tilde=0,savePlot=False,order=5,sigma=0,regMeth="OLS",lmd=0)
-    surfacePlotter(xx,yy,Z_orig,Z_tilde,m_savePlot,m_order,m_sigma,m_regMeth,m_lambda)
-    #beta_CI(beta_hat,var_hat,alpha,m_order,False)
-#================================================================================================================================================
-
-
-#================================================================================================================================================
-#========================================  MODEL ASSESSMENT  =============================================================================================
-#================================================================================================================================================
-    #Here we set the parameters for the various resampling methods.
-    no_resamp = ['no_resamp.', scaling,skOLS,xr,yr,z]
-    bootstrap= ['bootstrap',   scaling,skOLS,xr,yr,z,nBoot]
-    crossval = ['crossval',    scaling,skOLS,xr,yr,z,f,K,shuffle,skCV]
-
-    # bootstrap = no_resamp.append([nBoot])
-    # crossval = no_resamp.append([f,K,shuffle,skCV])
-
-    #Nested list. Choose which of the elements of resampMethods to use as our parameter
-    resampMethods = [no_resamp, bootstrap, crossval]       #List which again determines what resampling method to run.
-    regMethods = ['OLS','ridge','lasso']                   #Choose between regression methods
-    # graphs = ['bias','variance','MSEtest','MSEtrain','R2test','R2train'] #Which regression scores one can plot
-
-
-
-
-#================================================================================================================================================
+#------------------------------------------------------------------------------------------------------------------------------------------------
 #========================================== CONTROL PANEL =======================================================================================
+#------------------------------------------------------------------------------------------------------------------------------------------------
+#================================================================================================================================================
+    ONbutton   = True    #Set to False to run main.py without performing regression with the parameters specified below
+    tinkerBool = True    #If True, a folder named 'tinkerings' will be created if savePlot is True, in which the plots will be saved based on reg. and resamp. method.
+    exercise = 4          #If tinkerBool=False, a folder named 'exercise_results' if savePlot is True. This int determines which subfolder to save to.
 
+    terrainBool = False  #Use terrain data or Franke function?
+    n_t = 100            #How many points on the x and y axes if using terrain data
+    n_f = 20             #How many points on the x and y axes if using FrankeFunction
+    n = pick_n(n_f,n_t,terrainBool)
+    scaling = False     #Scale the design matrix, X?
+    skOLS = False       #Use sklearn in OLS (rather than pseudoinverse)?
+    skCV = False        #Use sklearn's cross validation contra own code?
+
+    plotBetaCI  = True  #Plot confidence intervals for beta_hat? Only works for plotTypeInt=0
+    alpha       = 0.05   #Significance level for confidence intervals
+
+    nBoot = 5         #Number of bootstrap samples
+    K = 10               #Number of folds in cross validation alg.
+    shuffle = True      #Shuffle the data before performing crossval folds?
+
+    #------------------------------------------
+    #S=0.1 #Use this for fixed standard deviation as a function of n
+    S = 40/(n**2)#Is equal to 0.1 when n=20. Ensures sigma scales correctly with n, discussed in report.
+    sigma_v  =       [0.5*S, 1*S, 2*S, 5*S]  #Make a separate plot for each of these sigmas
+    #sigma_v  =       [0.1*S, 1*S, 2*S, 10*S]
+    sigma_s  =               [1*S]        #Default standard deviation of epsilon
+    #------------------------------------------
+    minOrder,maxOrder =       1, 20         #Will make order vector from minOrder to maxOrder
+    order_s =                 [5]          #Default pol.degree if we don't plot vs. degrees
+    #------------------------------------------
+    minLoglmd, maxLoglmd =   -4, 0       #Will make log(lambda) vector from minLoglmd to maxLoglmd
+    lambda_s  =               [-3]       #Default lambda value. Must be set
+    #------------------------------------------
     sigmasBool = False  #If true, will produce a plot for each std. in sigma_v
-    maxOrder = 20       #Will make order vector from 0 to maxOrder
-    order_s  = [10]     #Default polynomial degree
-    lambda_s  = [-100.] #Default log(lambda) value, i.e. lambda=0
-    #lambda_s = [100000]
 
                   # [ordersBool lamdasBool] = plotTypeInt
-    plotTypeInt =              1
-                  # [  False   0   False  ]  Plots nothing, see returned list
+    plotTypeInt =              3
+                  # [  False   0   False  ]  Generate surf plots and print results
                   # [  True    1   False  ]  Plots error vs. pol.deg.
                   # [  False   2   True   ]  Plots error vs. lambda
                   # [  True    3   True   ]  Produces heatmap
-    indVars= setIndVars(n,maxOrder,order_s,lambda_s,sigmasBool, plotTypeInt)
+    savePlot = True #Save plots?
+    plotBool = True #Make error/score plots?
 
-    savePlot = False
-    plotBool = True #Make plots?
-
-    resampInt = 0   #0=no_resamp., 1=bootstrap, 2=crossval
+    resampInt = 0  #0=no_resamp., 1=bootstrap, 2=crossval
     regInt    = 0   #0=OLS,        1=ridge,     2=lasso
 
     allScores = [['bias'],['variance'],['MSEtest'],['MSEtrain'],['R2test'],['R2train']] #Which regression scores one can plot
     #               0           1           2           3           4           5
+    scoresNames = getScores(4,5)
     #Sets which scores to calculate by passing in the corresponding index from allScores.
     #Function def before main().
-    scoresNames = getScores(4,5)
-
-    #Produce plot(s) and return score results. They will be stored in the same order as the arguments of getScores()
-    scoreResults = MasterFunction(savePlot,plotBool,resampMethods[resampInt],regMethods[regInt],scoresNames,indVars)
-
 #================================================================================================================================================
+#------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
 
-    # #Makes surface plot of the Franke function fit and plots the regression parameters
-    # #with CI
-
-# #================================================================================================================================================
-    def surfAndCI():
-        m_sigma = indVars[0][-1]
-        print(m_sigma)
-        m_scaling = scaling
-        m_skOLS = skOLS
-        m_lambda =  indVars[2][0]
-        m_regMeth = 'OLS'
-        m_savePlot = False
-        m_order = order_s[0]
-
-        alpha = 0.05
-
-        X = desMat(xr,yr,m_order)
-        #regMeth = regMethods[1]
-
-        scorevalues,Z_orig,Z_tilde,beta_hat,var_hat\
-         = linReg(m_regMeth,getScores(4,5),X,z,m_sigma,m_scaling,m_skOLS,m_lambda)
-
-        surfacePlotter(xx,yy,Z_orig,Z_tilde,m_savePlot,m_order,m_sigma,m_regMeth,m_lambda)
-        #beta_CI(beta_hat,var_hat,alpha,m_order,False)
-    #surfAndCI()
+    # xr,yr,z,f=generateDesMatPars(False,1000)
+    # surfacePlotter(False,False,xr,yr,z)
 
 #================================================================================================================================================
+#======================= USE CONTROL PANEL VALUES TO GENERATE/SET ALL NEEDED VARIABLES ==========================================================
+
+    #This is done using lists.
+    #We do this to avoid functions with too many arguments and to simplify the code
+
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
+#--------------------- GENERATE xr,yr,z,f ----------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------------------------------------
+
+    xr,yr,z = generateDesMatPars(terrainBool,n)
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
+#--------- SET RESAMPLING VARIABLES ACCORDING TO resampInt(0,1 or 2)-------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------------------------------------
+    no_resamp = ['no_resamp.', xr,yr,z,scaling,skOLS]
+    bootstrap= ['bootstrap',   xr,yr,z,scaling,skOLS,nBoot]
+    crossval = ['crossval',    xr,yr,z,scaling,skOLS,skCV,shuffle,K]
+    resampMethods = [no_resamp, bootstrap, crossval]
+
+    resampMeth = resampMethods[resampInt]
+#---------------------------------------------------------------------------------------------------------------------------------------------
+#------- SET REGRESSION STRING ACCORDING TO regInt(0,1 or 2)---------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------------------------------------
+    regMethods = ['OLS','ridge','lasso']
+
+    regMeth = regMethods[regInt]
+#---------------------------------------------------------------------------------------------------------------------------------------------
+#--------SET HYPERPARAMETERS, i.e sigmas,orders and lambdas-----------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------------------------------------
+    setSigs= [sigma_v,sigma_s]
+    setOrds= [order_s, minOrder, maxOrder]
+    setLmds= [lambda_s,minLoglmd,maxLoglmd]
+
+    hyperPars= setHyperPars(n,setSigs,setOrds,setLmds,sigmasBool, plotTypeInt)
+#================================================================================================================================================
+#================================================================================================================================================
+#Finished generating/setting variables
 
 
 
+#Run scoreCalculator to produce and (save?) plot(s) and return the score results
+#as matrices. The results for a particular score will be stored in the same order
+#as the arguments of the getScores() function above.
 
-#------------------------------------------------------------------------------------------------------------------------------------------------
-#                           Set plotTypeInt = 1 in the following section
-#------------------------------------------------------------------------------------------------------------------------------------------------
-
-    plotTypeInt =                             1
-    indVars= setIndVars(n,maxOrder,order_s,lambda_s,sigmasBool, plotTypeInt)
-    savePlot = True
-
-#To reproduce a desired result, uncomment the corresponding function
-#=====================================================================================================
-#                                       Bias-variance
-#=====================================================================================================
-#For different resampling methods:
-#no_resamp:
-    #MasterFunction(savePlot,True,resampMethods[0],regMethods[0],getScores(0,1),indVars)
-#bootstrap:
-    #MasterFunction(savePlot,True,resampMethods[1],regMethods[0],getScores(0,1),indVars)
-#crossval:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[0],getScores(0,1),indVars)
+#================================================================================================================================================
+#--------------------------  CALCULATE RESULTS  ------------------------------------------------------------------------------------------------
+#================================================================================================================================================
+#================================================================================================================================================
+    if(ONbutton):
+        dataStr  =  'Using TERRAIN data' if terrainBool else 'Using FRANKE function'
+        tinkrStr = 'TINKER mode activated' if tinkerBool else 'Exercise mode active'
+        savePlotStr = 'Plot saving ON' if savePlot else 'Plot saving OFF'
+        print( dataStr, '\n')
+        print(tinkrStr,'\n')
+        print(savePlotStr,'\n')
 
 
-#For differen regression methods (using Cross Validation)
-#OLS:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[0],getScores(0,1),indVars)
-#ridge:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[1],getScores(0,1),indVars)
-#lasso:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[2],getScores(0,1),indVars)
-#=====================================================================================================
+        t_start = time.time()
+        # dic       dict    list     list     list      list
+        scoreRes,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=scoreCalculator(resampMeth,regMeth,scoresNames,hyperPars)
+        t_end = time.time()
 
+        print('scoreCalculator time: ', t_end-t_start,'\n')
+#================================================================================================================================================
+#--------------------------------  PLOT RESULTS  -------------------------------------------------------------------------------------------------------
+#================================================================================================================================================
+        sigmas,orders,lambdas = hyperPars
+        regMeth = regMethods[regInt]     #Unpack chosen regression method name
+        if(plotBool==True):
+            if(plotTypeInt==0 and regInt == 0):
+                for s,sigma in enumerate(sigmas): #Loop through in reversed order to have the low sigma plots pop up first
+                    surfacePlotter(tinkerBool,savePlot,xr,yr,z_noisyL[s],z_fittedL[s],sigmas[s],orders[0],lambdas[0],regMeth)
 
-#=====================================================================================================
-#                                  MSEtest VS MSEtrain
-#=====================================================================================================
-    #For different resampling methods:
-    #MasterFunction(savePlot,True,resampMethods[0],regMethods[0],getScores(2,3),indVars)
-    #MasterFunction(savePlot,True,resampMethods[1],regMethods[0],getScores(2,3),indVars)
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[0],getScores(2,3),indVars)
+                    if(plotBetaCI==True):
+                        beta_CI(tinkerBool,savePlot,beta_hat,var_beta,alpha,orders[0])
 
-    #For differen regression methods (using Cross Validation)
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[0],getScores(2,3),indVars)
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[1],getScores(2,3),indVars)
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[2],getScores(2,3),indVars)
-#=====================================================================================================
+                print('\nRegression scores for', 'sigma = ', sigmas, ': ')
+                for scoreName in scoreRes:
+                    print(f"{scoreName+':':<18}{scoreRes[scoreName]}")
 
-
-#=====================================================================================================
-#                                  R2test VS R2train
-#=====================================================================================================
-#====================================================================================
-#For different resampling methods:
-#====================================================================================
-#no_resamp:
-    #MasterFunction(savePlot,True,resampMethods[0],regMethods[0],getScores(4,5),indVars)
-#bootstrap:
-    #MasterFunction(savePlot,True,resampMethods[1],regMethods[0],getScores(2,3),indVars)
-#crossval:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[0],getScores(2,3),indVars)
-#====================================================================================
-#For differen regression methods(using Cross Validation):
-#====================================================================================
-#OLS:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[0],getScores(2,3),indVars)
-#ridge:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[1],getScores(2,3),indVars)
-#lasso:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[2],getScores(2,3),indVars)
-#=====================================================================================================
-#=====================================================================================================
-
-
-#------------------------------------------------------------------------------------------------------------------------------------------------
-#                           Set plotTypeInt = 2 in the following section
-#------------------------------------------------------------------------------------------------------------------------------------------------
-    plotTypeInt =                             2
-    indVars= setIndVars(n,maxOrder,order_s,lambda_s,sigmasBool, plotTypeInt)
-    savePlot = False
-
-#=====================================================================================================
-#         MSEtest vs MSEtrain scores for Ridge and Lasso plotted against lambda
-#=====================================================================================================
-#====================================================================================
-#Ridge for different resampling methods:
-#====================================================================================
-#no_resamp:
-    #MasterFunction(savePlot,True,resampMethods[0],regMethods[1],getScores(2,3),indVars)
-#bootstrap:
-    #MasterFunction(savePlot,True,resampMethods[1],regMethods[1],getScores(2,3),indVars)
-#crossval:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[1],getScores(2,3),indVars)
-#====================================================================================
-#Lasso for different resampling methods:
-#====================================================================================
-#no_resamp:
-    #MasterFunction(savePlot,True,resampMethods[0],regMethods[2],getScores(2,3),indVars)
-#bootstrap:
-    #MasterFunction(savePlot,True,resampMethods[1],regMethods[2],getScores(2,3),indVars)
-#crossval:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[2],getScores(2,3),indVars)
-#=====================================================================================================
-#=====================================================================================================
-
-
-
-#------------------------------------------------------------------------------------------------------------------------------------------------
-#                           Set plotTypeInt = 3 in the following section
-#------------------------------------------------------------------------------------------------------------------------------------------------
-    plotTypeInt =                             3
-    indVars= setIndVars(n,maxOrder,order_s,lambda_s,sigmasBool, plotTypeInt)
-    savePlot = False
-
-#=====================================================================================================
-#            Heat map of MSEtest vs MSEtrain scores for Ridge and Lasso
-#=====================================================================================================
-#====================================================================================
-#Ridge for different resampling methods:
-#====================================================================================
-#no_resamp:
-    #MasterFunction(savePlot,True,resampMethods[0],regMethods[1],getScores(2,3),indVars)
-#bootstrap:
-    #MasterFunction(savePlot,True,resampMethods[1],regMethods[1],getScores(2,3),indVars)
-#crossval:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[1],getScores(2,3),indVars)
-#====================================================================================
-#Lasso for different resampling methods:
-#====================================================================================
-#no_resamp:
-    #MasterFunction(savePlot,True,resampMethods[0],regMethods[2],getScores(2,3),indVars)
-#bootstrap:
-    #MasterFunction(savePlot,True,resampMethods[1],regMethods[2],getScores(2,3),indVars)
-#crossval:
-    #MasterFunction(savePlot,True,resampMethods[2],regMethods[2],getScores(2,3),indVars)
-#=====================================================================================================
-#=====================================================================================================
-
-
+            else:
+                scorePlotter(scoreRes,calcAtts,savePlot,terrainBool,tinkerBool,exercise)
+#================================================================================================================================================
+#--------------------------------------------------------------------------------------------------------------------------------------
+#================================================================================================================================================
 
 if __name__ =="__main__":
     main()
