@@ -26,11 +26,15 @@ def OLS(X,z,sklearn):
     return beta_hat
 
 def ridge(X,z,lmd):
+    lamb = lmd
+    #print('before: ', lamb)
     lamb = pow(10,lmd) #The input values are log values in range e.g. -6 to 0
+    lmd = lamb
+    #print(lamb)
+
     n = X.shape[1]
     I_n = np.identity(n)
-    print(lamb)
-    beta_hat = np.linalg.pinv(X.T@X+lamb*I_n)@X.T@z
+    beta_hat = np.linalg.pinv(X.T@X+lmd*I_n)@X.T@z
     # print('Ridge: \n')
     # print('beta_hat\n', beta_hat)
     return beta_hat
@@ -154,7 +158,6 @@ def R2(y_data, y_model):
 def bias(f_test,Ez): return getMSE(f_test, Ez)
 def variance(z_predict, Ez): return getMSE(z_predict, Ez)
 def cov(f_test, z_predict): return np.cov(f_test.reshape(1,-1),z_predict.reshape(1,-1))[0,1]
-
 def MSEtest(z_test, z_predict): return getMSE(z_test, z_predict)
 def MSEtrain(z_train, z_tilde): return getMSE(z_train, z_tilde)
 def R2test(z_test, z_predict): return getR2(z_test, z_predict)
@@ -164,7 +167,7 @@ def getScores(scoreNames,z_test,f_test,z_train,z_predict,z_tilde):
     scoreValues = []
     if("bias" in scoreNames):
         Ez = np.mean(z_tilde)
-        scoreValues.append(bias(f_test,Ez))
+        scoreValues.append(bias(z_test,Ez))
 
     if("variance" in scoreNames):
         Ez = np.mean(z_tilde)

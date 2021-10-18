@@ -25,12 +25,9 @@ from functions import OLS,ridge,lasso,FrankeFunction,desMat,getMSE,getR2,addNois
 from regression_methods import linReg
 from resampling_methods import bootstrap,crossValidation
 
-from calculate_errors import scoreCalculator
+from do_regression import doRegression
 from plotters import scorePlotter,surfacePlotter,beta_CI
 #from do_project import doProject
-
-
-
 
 def generateDesMatPars(terrainBool,n):
     if(terrainBool):
@@ -51,7 +48,6 @@ def generateDesMatPars(terrainBool,n):
 
     xr = np.ravel(xx)
     yr = np.ravel(yy)
-    # f = z #Target function. In the case of Franke, it is know, and so we can calculate the true bias
     return (xr,yr,z)
 
 def plotter():
@@ -126,17 +122,18 @@ def main():
     np.random.seed(420)
 #================================================================================================================================================
 #------------------------------------------------------------------------------------------------------------------------------------------------
-#========================================== CONTROL PANEL =======================================================================================
+#-----------------------------------  CONTROL PANEL ---------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
+    #This is where all the variables are set
     ONbutton   = True    #Set to False to run main.py without performing regression with the parameters specified below
-    tinkerBool = False    #If True, a folder named 'tinkerings' will be created if savePlot is True, in which the plots will be saved based on reg. and resamp. method.
-    exercise = 6          #If tinkerBool=False, a folder named 'exercise_results' if savePlot is True. This int determines which subfolder to save to.
+    tinkerBool = True    #If True, a folder named 'tinkerings' will be created if savePlot is True, in which the plots will be saved based on reg. and resamp. method.
+    exercise = 1          #If tinkerBool=False, a folder named 'exercise_results' if savePlot is True. This int determines which subfolder to save to.
 
     terrainBool = False  #Use terrain data or Franke function?
-    n_t = 200            #How many points on the x and y axes if using terrain data
-    n_f = 20             #How many points on the x and y axes if using FrankeFunction
-    n = n_t if terrainBool else n_f
+    n_t = 100            #How many points on the x and y axes if using terrain data
+    n_f = 40             #How many points on the x and y axes if using FrankeFunction
+
     scaling = True     #Scale the design matrix, X?
     skOLS = False       #Use sklearn in OLS (rather than pseudoinverse)?
     skCV = False        #Use sklearn's cross validation contra own code?
@@ -144,59 +141,66 @@ def main():
     plotBetaCI  = False  #Plot confidence intervals for beta_hat? Only works for plotTypeInt=0
     alpha       = 0.05   #Significance level for confidence intervals
 
-    nBoot = 50         #Number of bootstrap samples
-    K = 5               #Number of folds in cross validation alg.
-    shuffle = True      #Shuffle the data before performing crossval folds?
-
-    #------------------------------------------
-    S = 0 if terrainBool else 40/(n**2)#Is equal to 0.1 when n=20. Ensures sigma scales 'correctly?'
-    # with n, discussed in report.
-    #S = 40/(n**2)
+    #---------------------------------------------------------------------------
+    #-----------------------Choose hyperparamets -------------------------------
+    #---------------------------------------------------------------------------
+    S = 0 if terrainBool else 40/(n_f**2)     #Is equal to 0.1 when n=20. Ensures sigma scales 'correctly?'with n, discussed in report.
+    S = 2*S
     sigma_v  =       [0.1*S, 1*S, 2*S, 10*S]  #Make a separate plot for each of these sigmas
     #sigma_v  =       [0.1*S, 1*S, 2*S, 10*S]
-    sigma_s  =               [10*S]        #Default standard deviation of epsilon
+    sigma_s  =               [2*S]        #Default standard deviation of epsilon
     #------------------------------------------
     minOrder,maxOrder =       1, 20         #Will make order vector from minOrder to maxOrder
-    order_s =                 [10]           #Default pol.degree if we don't plot vs. degrees
+    order_s =                 [5]           #Default pol.degree if we don't plot vs. degrees
     #------------------------------------------
-    minLoglmd, maxLoglmd =   -15,15       #Will make log(lambda) vector from minLoglmd to maxLoglmd
+    minLoglmd, maxLoglmd =     -15,15      #Will make log(lambda) vector from minLoglmd to maxLoglmd
     lambda_s  =               [-1.21]        #Default lambda value. Must be set
-    #------------------------------------------
-    sigmasBool = True  #If true, will produce a plot for each std. in sigma_v
+    #---------------------------------------------------------------------------
+    #------------------------ Choose type of plot-------------------------------
+    #---------------------------------------------------------------------------
+    sigmasBool = False #If true, will produce a plot for each element in sigma_v.
+    #Will be set to False for terrain data during reformating
 
                   # [ordersBool lamdasBool] = plotTypeInt
-    plotTypeInt =              2
+    plotTypeInt =              3
                   # [  False   0   False  ]  Generate surface plot(s) and print results if using no_resamp.
                   # [  True    1   False  ]  Plots error vs. pol.deg.
                   # [  False   2   True   ]  Plots error vs. lambda
                   # [  True    3   True   ]  Produces heatmap
-    savePlot = False #Save plots?
-    plotBool = True #Make error/score plots?
-
-    resampInt = 0 #0=no_resamp., 1=bootstrap, 2=crossval
-    regInt    = 2   #0=OLS,        1=ridge,     2=lasso
+    origSurfPlot = False #Plot original data w. no noise before doing regression? Will be set to False for terrain data
+    plotResults  = True #Plot results based on plotTypeInt?
+    savePlot = True #Save plots?
+    #---------------------------------------------------------------------------
+    #Choose resampling technique, regression method and what scores to calculate
+    #---------------------------------------------------------------------------
+    resampInt = 0 #=no_resamp., 1=bootstrap, 2=crossval
+    regInt    = 1   #=OLS,        1=ridge,     2=lasso
 
     allScores = [['bias'],['variance'],['MSEtest'],['MSEtrain'],['R2test'],['R2train']] #Which regression scores one can plot
     #               0           1           2           3           4           5
-    scoresNames = getScores(0,1)
-    #Sets which scores to calculate by passing in the corresponding index from allScores.
-    #Function def before main().
+    scoresNames = getScores(0,1,2,3,4,5)
+    #Sets which scores to calculate by passing in the corresponding indices from allScores.
+
+    nBoot = 1         #Number of bootstrap samples
+    K = 5               #Number of folds in cross validation alg.
+    shuffle = True      #Shuffle the data before performing crossval folds?
 #================================================================================================================================================
 #------------------------------------------------------------------------------------------------------------------------------------------------
-#================================================================================================================================================
 #------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
 
-    # xr,yr,z,f=generateDesMatPars(False,1000)
-    # surfacePlotter(False,False,xr,yr,z)
 
 #================================================================================================================================================
-#======================= USE CONTROL PANEL VALUES TO GENERATE/SET ALL NEEDED VARIABLES ==========================================================
-    if(terrainBool):sigmasBool = False
+#------------------------------------------------------------------------------------------------------------------------------------------------
+#----------------------TRANSFORM/REFORMAT ALL THE SET VARIABLES ---------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------
+#================================================================================================================================================
     #This is done using lists.
     #We do this to avoid functions with too many arguments and to simplify the code
 
-
+    n = n_t if terrainBool else n_f
+    if(terrainBool):sigmasBool = False
+    if(terrainBool):origSurfPlot = False
 #---------------------------------------------------------------------------------------------------------------------------------------------
 #--------------------- GENERATE xr,yr,z,f ----------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------------------------------------------------
@@ -228,11 +232,15 @@ def main():
     hyperPars= setHyperPars(n,setSigs,setOrds,setLmds,sigmasBool, plotTypeInt)
 #================================================================================================================================================
 #================================================================================================================================================
-#Finished generating/setting variables
+#Finished generating/setting variables.
+
+    #Plot original data
+    if(origSurfPlot):
+        xr,yr,z=generateDesMatPars(terrainBool,n)
+        surfacePlotter(terrainBool,tinkerBool,False,xr,yr,z)
 
 
-
-#Run scoreCalculator to produce and (save?) plot(s) and return the score results
+#Run doRegression to produce and (save?) plot(s) and return the score results
 #as matrices. The results for a particular score will be stored in the same order
 #as the arguments of the getScores() function above.
 
@@ -244,26 +252,27 @@ def main():
         dataStr  =  'Using TERRAIN data' if terrainBool else 'Using FRANKE function'
         tinkrStr = 'TINKER mode activated' if tinkerBool else 'Exercise mode active'
         savePlotStr = 'Plot saving ON' if savePlot else 'Plot saving OFF'
-        print( dataStr, '\n')
-        print(tinkrStr,'\n')
-        print(savePlotStr,'\n')
+        print('\t\t\t',dataStr, '\n')
+        print('\t\t\t',tinkrStr,'\n')
+        print('\t\t\t',savePlotStr,'\n\n')
 
-
+        print('Performing regression')
         t_start = time.time()
         # dic       dict    list     list     list      list
-        scoreRes,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=scoreCalculator(resampMeth,regMeth,scoresNames,hyperPars)
+        scoreRes,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=doRegression(resampMeth,regMeth,scoresNames,hyperPars)
         t_end = time.time()
 
-        print('scoreCalculator time: ', t_end-t_start,'\n')
+        print('doRegression time: ', t_end-t_start,'sec\n')
 #================================================================================================================================================
 #--------------------------------  PLOT RESULTS  -------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
         sigmas,orders,lambdas = hyperPars
         regMeth = regMethods[regInt]     #Unpack chosen regression method name
-        if(plotBool==True):
+
+        if(plotResults==True):
             if(plotTypeInt==0 and resampInt == 0):
-                for s,sigma in enumerate(sigmas): #Loop through in reversed order to have the low sigma plots pop up first
-                    surfacePlotter(tinkerBool,savePlot,xr,yr,z_noisyL[s],z_fittedL[s],sigmas[s],orders[0],lambdas[0],regMeth)
+                for s,sigma in enumerate(sigmas):
+                    surfacePlotter(terrainBool,tinkerBool,savePlot,xr,yr,z_noisyL[s],z_fittedL[s],sigmas[s],orders[0],lambdas[0],regMeth)
                                    #tinkerMode,savePlot,xr,yr,z_orig,z_tilde,sigma,order,lmd,regmeth)
                     if(plotBetaCI==True):
                         beta_CI(tinkerBool,savePlot,beta_hat,var_beta,alpha,orders[0])

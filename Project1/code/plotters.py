@@ -59,7 +59,7 @@ def titleMaker(terrainBool,sigma,regMeth,resampMeth,nBoot,K,n,lambdas,orders):
     + resampPar+ r"$\sigma_{\epsilon}$=" + f"{sigma:.2f},  n={n}"
 
     normPlotTitle = regMeth+" regression" " on "+dataTypeStr+ " with " +resampMeth[0]+'\n '\
-    +regressionPar+ resampPar+ f"n={n},  "+r"$\sigma_{\epsilon}$=" + f"{sigma:.2f}"
+    +regressionPar+ resampPar+ f"n={n},  "+r"$\sigma_{\epsilon}$=" + f"{sigma:.3f}"
 
     heatMapFilename ="score_"+regMeth+"_"+resampMeth[0]+"_"\
     +resampPar_f+ f"n={n}_" + f"sigma={sigma:.2f}"
@@ -68,12 +68,18 @@ def titleMaker(terrainBool,sigma,regMeth,resampMeth,nBoot,K,n,lambdas,orders):
     +resampPar_f+ f"n={n}_" + f"sigma={sigma:.2f}"
 
     return heatMapTitle,normPlotTitle, heatMapFilename, normPlotFilename
-#===================================================================
+#==================================================================================================
 
-#def scorePlotter(calcRes,calcAtts,xr,yr,z_orig,z_fitted,savePlot,terrainBool,tinkerBool,exercise):
+
+#====================================================================================================================
+#--------------------------------------------------------------------------------------------------------------------
+#                            Plots the score results
+#--------------------------------------------------------------------------------------------------------------------
+#====================================================================================================================
 def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
     #Dict containing score results in matrix form
     sigmas, orders, lambdas = calcAtts['hyperPars']
+
 
     nSigmas = len(sigmas)
     nOrders = len(orders)
@@ -83,23 +89,25 @@ def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
     for s,score in enumerate(calcRes):
         scoreNames.append(score)
 
-    #--------------------------------------------------------------------------
+
     #Get attributes needed for making plot titles/filenames
     regMeth,resampMeth,nBoot,K,n = calcAtts['plotTitleAtts']
-
-    #Make the subdirectory for saving plot(s) if it doesn't exist
-    # tinkerStr   = 'tinker'  if (tinkerBool) else  'exercises'
+    #---------------------------------------------------------------------------
+    #   Make the subdirectory for saving plot(s) if it doesn't exist
+    #   tinkerStr   = 'tinker'  if (tinkerBool) else  'exercises'
+    #---------------------------------------------------------------------------
     dataTypeStr = 'terrain' if (terrainBool) else 'Franke'
     if(tinkerBool):
         subfolder = "tinkerings/"+dataTypeStr+"/"+regMeth+"/"+resampMeth[0]
         # subfolder_surfplot = "tinkerings/surface_plots/"
     elif(tinkerBool==False):
-        subfolder = "exercise_results/"+f'exercise{exercise}/'
+        subfolder = "exercise_results/"+f'exercise{exercise}/'+f'n={n}'
         # subfolder_surfplot = "exercise_results/surface_plots/"
     if(savePlot):
         if not os.path.exists(subfolder):
             os.makedirs(subfolder)
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
 
     #====================================================================================
     #====== Use the found scores to generate a plot for this iteration of sigma =========
@@ -122,8 +130,8 @@ def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
                 if(scoreStr == 'R2test' or scoreStr == 'R2train'):
                     ax = sns.heatmap(M,cmap="BuPu_r",linewidths=.0,annot = not savePlot)
                 if(scoreStr == 'MSEtest' or scoreStr == 'MSEtrain'):
-                    ax = sns.heatmap(M,linewidths=.0,annot = not savePlot)
-                    #ax = sns.heatmap(M,cmap ="Greens",linewidths=.0,annot = not savePlot)
+                    #ax = sns.heatmap(M,linewidths=.0,annot = not savePlot)
+                    ax = sns.heatmap(M,cmap ="Greens",linewidths=.0,annot = not savePlot)
                 if(scoreStr == 'variance'):
                     ax = sns.heatmap(M,cmap ="Blues",linewidths=.0,annot = not savePlot)
                 if(scoreStr == 'bias'):
@@ -137,24 +145,16 @@ def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
                 if(savePlot):
                     plt.savefig(subfolder+"/"+scoreStr+heatMapFilename+'.png')
                 plt.show()
-        # elif(nLambdas ==1 and nOrders ==1):
-        #     print('Regression scores for ', 'sigma = ', sigmas, ': ')
-        #     # print(scoreName,': ',calcRes[scoreName])
-        #
-        #     for scoreName in calcRes:
-        #         print(scoreName,': ',calcRes[scoreName])
-        #     print('\n')
-
 
         elif(nLambdas>1 or nOrders>1 ): #Only run in case only one of orders or lambas is a 'vector'
             #========================================================================
-            #=== Plot score(s) as a function of either order or lambda ==============
+            #    Plot score(s) as a function of either order or lambda
             #========================================================================
 
-            #====================================================================
-            #Draw the curves of the desired scores. Determines whether to
-            #set xaxis to orders or lambdas.
-            #====================================================================
+            #-----------------------------------------------------------------------
+            #   Draw the curves of the desired scores. Determines whether to
+            #   set xaxis to orders or lambdas.
+            #-----------------------------------------------------------------------
             fig=plt.figure()
             for score in scoreNames:
                 score_color = scoreLineSpec[score][0]
@@ -172,9 +172,14 @@ def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
                     xaxis_title = r'Regularization parameter, $\log{\lambda}$'
                     #score_vector=calcRes[score][:,0,s]
                     score_vector=calcRes[score][:,0,s]
+                scoreLabel = score
+                if(scoreLabel == 'bias'): scoreLabel = r'bias$^2$'
+
                 plt.plot(xaxis,score_vector, score_color,\
-                label=score,linestyle=score_linestyle)
-            #====================================================================
+                label=scoreLabel,linestyle=score_linestyle)
+
+            #-----------------------------------------------------------------------
+            #-----------------------------------------------------------------------
 
             # if('R2test' in scoreNames and 'R2train' in scoreNames):
             #     plt.plot(xaxis,np.ones(len(xaxis)),'black',linestyle='--',dashes=(2,1))
@@ -198,17 +203,19 @@ def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
                 plt.savefig(subfolder+"/"+joinedScoreStr+normPlotFilename + '.png')
                 # f'_scorelen={len(scoreNames)}'
             plt.show()
+            #========================================================================
+            #========================================================================
 
 
+#====================================================================================================================
+#--------------------------------------------------------------------------------------------------------------------
+#       Makes surface plots of both the original data and the fitted function
+#--------------------------------------------------------------------------------------------------------------------
+#====================================================================================================================
 
-
-#===============================================================================
-#Makes surface plots of both the fitted function and the original Franke function,
-#side by side
-#===============================================================================
 
 #def surfacePlotter(tinkerMode,savePlot,xr,yr,z_orig,z_tilde,sigma,order,lmd,regmeth)
-def surfacePlotter(tinkerBool,savePlot,xr,yr,z_orig,*args):
+def surfacePlotter(terrainBool,tinkerBool,savePlot,xr,yr,z_orig,*args):
     n = int(np.sqrt(len(xr)))
     xx = xr.reshape(n,n)
     yy = yr.reshape(n,n)
@@ -228,10 +235,10 @@ def surfacePlotter(tinkerBool,savePlot,xr,yr,z_orig,*args):
     z_fitted, sigma, order, lmd, regMeth = paramList
     #---------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------
-#    If Z_tilde is not included in the function's argument list, plot only Z_orig.
-#    Otherwise plot both
-#-------------------------------------------------------------------------------
+    #-------------------------------------------------------------------------------
+    #    If Z_tilde is not included in the function's argument list, plot only Z_orig.
+    #    Otherwise plot both
+    #-------------------------------------------------------------------------------
     if(len(z_fitted)!=len(z_orig)):
         Z_orig = z_orig.reshape(n,n)
         fig = plt.figure()
@@ -249,7 +256,11 @@ def surfacePlotter(tinkerBool,savePlot,xr,yr,z_orig,*args):
         # Add a color bar which maps values to colors.
         fig.colorbar(surf, shrink=0.5, aspect=5)
         ax.view_init(20, 30)
-        plt.title(r"Original data"+"\n"+ f"n={n}, " +"$\sigma_{\epsilon}$" + f"= {sigma}")
+        #m_dataTypeStr = "Terrain data" if(not terrainBool) else 'Franke Function, no noise'
+        if(terrainBool):
+            plt.title(r"Original data"+"\n"+ f"n={n}, " +"$\sigma_{\epsilon}$" + f"= {sigma}")
+        else:
+            plt.title(r"Terrain data"+"\n"+ f"n={n}")
         plt.show()
     else:
         Z_orig, Z_fitted = z_orig.reshape(n,n), z_fitted.reshape(n,n)
@@ -257,7 +268,11 @@ def surfacePlotter(tinkerBool,savePlot,xr,yr,z_orig,*args):
         #First plot
         ax = fig.add_subplot(121, projection='3d')
         surf = ax.plot_surface(xx,yy,Z_orig, cmap = cm.coolwarm, linewidth=0, antialiased=False)
-        ax.set_title(r"Original data"+"\n"+ f"n={n}" + r", $\sigma_{\epsilon}$" + f"= {sigma}")
+        #m_dataTypeStr = "Terrain data" if(terrainBool) else 'Franke Function, no noise'
+        if(terrainBool):
+            ax.set_title("Terrain data"+"\n"+ f"n={n}")
+        else:
+            ax.set_title("Franke function"+"\n"+ f"n={n}" + r", $\sigma_{\epsilon}$" + f"= {sigma:.4f}")
         #Customize the z axis.
         #ax.set_zlim(-0.10, 1.40)
         ax.zaxis.set_major_locator(LinearLocator(10))
@@ -297,7 +312,10 @@ def surfacePlotter(tinkerBool,savePlot,xr,yr,z_orig,*args):
             +r'\sigma_{\epsilon}$=' + f'{sigma}.png')
         #print('From end of surfacePlotter')
         plt.show()
-#===============================================================================
+#====================================================================================================================
+#--------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------------
+#====================================================================================================================
 
 
 #===============================================================================
