@@ -133,7 +133,7 @@ def main():
     tinkerBool = False    #If True, a folder named 'tinkerings' will be created if savePlot is True, in which the plots will be saved based on reg. and resamp. method.
     exercise = 6          #If tinkerBool=False, a folder named 'exercise_results' if savePlot is True. This int determines which subfolder to save to.
 
-    terrainBool = True  #Use terrain data or Franke function?
+    terrainBool = False  #Use terrain data or Franke function?
     n_t = 200            #How many points on the x and y axes if using terrain data
     n_f = 20             #How many points on the x and y axes if using FrankeFunction
     n = n_t if terrainBool else n_f
@@ -144,7 +144,7 @@ def main():
     plotBetaCI  = False  #Plot confidence intervals for beta_hat? Only works for plotTypeInt=0
     alpha       = 0.05   #Significance level for confidence intervals
 
-    nBoot = 400         #Number of bootstrap samples
+    nBoot = 50         #Number of bootstrap samples
     K = 5               #Number of folds in cross validation alg.
     shuffle = True      #Shuffle the data before performing crossval folds?
 
@@ -154,7 +154,7 @@ def main():
     #S = 40/(n**2)
     sigma_v  =       [0.1*S, 1*S, 2*S, 10*S]  #Make a separate plot for each of these sigmas
     #sigma_v  =       [0.1*S, 1*S, 2*S, 10*S]
-    sigma_s  =               [2*S]        #Default standard deviation of epsilon
+    sigma_s  =               [10*S]        #Default standard deviation of epsilon
     #------------------------------------------
     minOrder,maxOrder =       1, 20         #Will make order vector from minOrder to maxOrder
     order_s =                 [10]           #Default pol.degree if we don't plot vs. degrees
@@ -162,25 +162,27 @@ def main():
     minLoglmd, maxLoglmd =   -15,15       #Will make log(lambda) vector from minLoglmd to maxLoglmd
     lambda_s  =               [-1.21]        #Default lambda value. Must be set
     #------------------------------------------
-    sigmasBool = False  #If true, will produce a plot for each std. in sigma_v
+    sigmasBool = True  #If true, will produce a plot for each std. in sigma_v
 
                   # [ordersBool lamdasBool] = plotTypeInt
-    plotTypeInt =              1
+    plotTypeInt =              2
                   # [  False   0   False  ]  Generate surface plot(s) and print results if using no_resamp.
                   # [  True    1   False  ]  Plots error vs. pol.deg.
                   # [  False   2   True   ]  Plots error vs. lambda
                   # [  True    3   True   ]  Produces heatmap
-    savePlot = True #Save plots?
+    savePlot = False #Save plots?
     plotBool = True #Make error/score plots?
 
     resampInt = 0 #0=no_resamp., 1=bootstrap, 2=crossval
-    regInt    = 0   #0=OLS,        1=ridge,     2=lasso
+    regInt    = 2   #0=OLS,        1=ridge,     2=lasso
 
     allScores = [['bias'],['variance'],['MSEtest'],['MSEtrain'],['R2test'],['R2train']] #Which regression scores one can plot
     #               0           1           2           3           4           5
-    scoresNames = getScores(0,1,2)
+    scoresNames = getScores(0,1)
     #Sets which scores to calculate by passing in the corresponding index from allScores.
     #Function def before main().
+#================================================================================================================================================
+#------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
 #------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================

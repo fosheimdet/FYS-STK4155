@@ -151,7 +151,7 @@ def R2(y_data, y_model):
     return 1 - np.sum((y_data - y_model) ** 2) / np.sum((y_data - np.mean(y_data)) ** 2)
 
 
-def bias(z_test,Ez): return getMSE(z_test, Ez)
+def bias(f_test,Ez): return getMSE(f_test, Ez)
 def variance(z_predict, Ez): return getMSE(z_predict, Ez)
 def cov(f_test, z_predict): return np.cov(f_test.reshape(1,-1),z_predict.reshape(1,-1))[0,1]
 

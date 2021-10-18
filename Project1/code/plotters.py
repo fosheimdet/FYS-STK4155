@@ -49,23 +49,23 @@ def titleMaker(terrainBool,sigma,regMeth,resampMeth,nBoot,K,n,lambdas,orders):
     if(regMeth=='ridge' or regMeth=='lasso'):
         if(len(lambdas)==1): #If lambdas is not a vector
             #regressionPar, regressionPar_f = f'$\lambda$={lambdas[0]:.2f},  ', f'lmd={lambdas[0]:.2f}'
-            regressionPar  = r'$\log{\lambda}$=' + f'{np.log10(lambdas[0]):.2f},  '
-            regressionPar_f =  f'logLmd={np.log10(lambdas[0]):.2f}'
+            regressionPar  = r'$\log{\lambda}$=' + f'{lambdas[0]:.2f},  '
+            regressionPar_f =  f'logLmd={lambdas[0]:.2f}'
             # regressionPar_filename = f'lmd={lambdas[0]:.2f}'
         elif(len(orders)==1):#If orders is not a vector
             regressionPar, regressionPar_f = f'pol.deg.={orders[0]},  ', f'pol.deg.={orders[0]}_'
 
     heatMapTitle =" score using " + regMeth + " w. "+resampMeth[0]+" on " +dataTypeStr+"\n "\
-    + resampPar+ r"$\sigma_{\epsilon}$=" + f"{sigma},  n={n}"
+    + resampPar+ r"$\sigma_{\epsilon}$=" + f"{sigma:.2f},  n={n}"
 
     normPlotTitle = regMeth+" regression" " on "+dataTypeStr+ " with " +resampMeth[0]+'\n '\
-    +regressionPar+ resampPar+ f"n={n},  "+r"$\sigma_{\epsilon}$=" + f"{sigma}"
+    +regressionPar+ resampPar+ f"n={n},  "+r"$\sigma_{\epsilon}$=" + f"{sigma:.2f}"
 
     heatMapFilename ="score_"+regMeth+"_"+resampMeth[0]+"_"\
-    +resampPar_f+ f"n={n}_" + f"sigma={sigma}"
+    +resampPar_f+ f"n={n}_" + f"sigma={sigma:.2f}"
 
     normPlotFilename ="_"+regMeth+"_"+resampMeth[0]+"_"+regressionPar_f\
-    +resampPar_f+ f"n={n}_" + f"sigma={sigma}"
+    +resampPar_f+ f"n={n}_" + f"sigma={sigma:.2f}"
 
     return heatMapTitle,normPlotTitle, heatMapFilename, normPlotFilename
 #===================================================================
