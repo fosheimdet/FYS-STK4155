@@ -18,16 +18,15 @@ def linReg(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS):
     # z = z.reshape(-1,1)
     # f = f.reshape(-1,1)
 
-
     if(scaling):
         X = StandardPandascaler(X) #Scales all columns but the first
 
     #beta_hat = np.zeros((X.shape[1],1))#Initialize the optimal reg. param. vector
 
-    X_train,X_test,z_train,z_test,f_train,f_test = train_test_split(X,z,f,test_size=0.2)
-    #X_train,X_test,z_train,z_test  = train_test_split(X,z,test_size=0.2)
+    #X_train,X_test,z_train,z_test,f_train,f_test = train_test_split(X,z,f,test_size=0.2)
+    X_train,X_test,z_train,z_test  = train_test_split(X,z,test_size=0.2)
 
-    #f_train,f_test = train_test_split(f,test_size=0.2)
+    f_train,f_test = train_test_split(f,test_size=0.2)
     beta_hat = np.ones(X.shape[1])
 
     if(regMeth=='OLS'):

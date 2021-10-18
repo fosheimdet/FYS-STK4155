@@ -122,7 +122,8 @@ def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
                 if(scoreStr == 'R2test' or scoreStr == 'R2train'):
                     ax = sns.heatmap(M,cmap="BuPu_r",linewidths=.0,annot = not savePlot)
                 if(scoreStr == 'MSEtest' or scoreStr == 'MSEtrain'):
-                    ax = sns.heatmap(M,cmap ="Greens",linewidths=.0,annot = not savePlot)
+                    ax = sns.heatmap(M,linewidths=.0,annot = not savePlot)
+                    #ax = sns.heatmap(M,cmap ="Greens",linewidths=.0,annot = not savePlot)
                 if(scoreStr == 'variance'):
                     ax = sns.heatmap(M,cmap ="Blues",linewidths=.0,annot = not savePlot)
                 if(scoreStr == 'bias'):
@@ -165,7 +166,7 @@ def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
                     # score_vector=calcRes[score][0,:,s]
                     score_vector=calcRes[score][0,:,s]
                 if (nOrders==1):
-                    xaxis = np.log10(lambdas)
+                    xaxis = lambdas
                     # for i in range(0,nLambdas):
                     #     lmds_formatted[i] = float("{:.2f}".format(lambdas[i]))
                     xaxis_title = r'Regularization parameter, $\log{\lambda}$'
@@ -275,7 +276,7 @@ def surfacePlotter(tinkerBool,savePlot,xr,yr,z_orig,*args):
         linewidth=0, antialiased=False)
         titleStr = ''
         if(regMeth=='ridge' or regMeth=='lasso'):
-            titleStr = f', '+r'$\log{\lambda}=$'+f'{np.log10(lmd):0.2f}'# f'{np.log10(lambdas[0]):.2f}'
+            titleStr = f', '+r'$\log{\lambda}=$'+f'{lmd:0.2f}'# f'{np.log10(lambdas[0]):.2f}'
         ax.set_title(regMeth+f' fit\n pol.deg={order}'+titleStr)
         #ax.set_zlim(-0.10, 1.40)
         ax.zaxis.set_major_locator(LinearLocator(10))
@@ -294,6 +295,7 @@ def surfacePlotter(tinkerBool,savePlot,xr,yr,z_orig,*args):
         if(savePlot):
             plt.savefig(subfolder_surfplot+f'linReg_surface_order={order}__n={n}__'\
             +r'\sigma_{\epsilon}$=' + f'{sigma}.png')
+        #print('From end of surfacePlotter')
         plt.show()
 #===============================================================================
 

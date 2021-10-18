@@ -30,16 +30,12 @@ from plotters import scorePlotter,surfacePlotter,beta_CI
 #from do_project import doProject
 
 
-def pick_n(n_f,n_t,terrainBool):
-    n=n_f
-    if(terrainBool):
-        n=n_t
-    return n
+
 
 def generateDesMatPars(terrainBool,n):
     if(terrainBool):
         #Get terrain data:
-        terrain = imread('SRTM_data_Norway_2.tif')
+        terrain = imread('SRTM_data_Norway_1.tif')
         terrain = terrain[:n,:n]
         x = np.linspace(0,1, np.shape(terrain)[0])
         y = np.linspace(0,1, np.shape(terrain)[1])
@@ -51,7 +47,7 @@ def generateDesMatPars(terrainBool,n):
         y = np.linspace(0,1,n)
         xx, yy = np.meshgrid(x,y)
         Z = FrankeFunction(xx,yy)
-        z= np.ravel(Z)         #Original z values of Franke's function without noise
+        z= np.ravel(Z)  #Original z values of Franke's function without noise
 
     xr = np.ravel(xx)
     yr = np.ravel(yy)
@@ -119,12 +115,6 @@ def setHyperPars(n,setSigs,setOrds,setLmds,sigmasBool, plotTypeInt):
         orders = order_v
         lambdas= lambda_v
 
-    if(len(lambdas)>1):
-        lambdas = pow(10,lambdas)
-    else:
-        lmdTemp = pow(10,lambdas[0])
-        lambdas = [lmdTemp]
-    #print(lambdas)
     return sigmas,orders,lambdas
 
 #==============================================================================================================================
@@ -140,54 +130,55 @@ def main():
 #------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
     ONbutton   = True    #Set to False to run main.py without performing regression with the parameters specified below
-    tinkerBool = True    #If True, a folder named 'tinkerings' will be created if savePlot is True, in which the plots will be saved based on reg. and resamp. method.
-    exercise = 4          #If tinkerBool=False, a folder named 'exercise_results' if savePlot is True. This int determines which subfolder to save to.
+    tinkerBool = False    #If True, a folder named 'tinkerings' will be created if savePlot is True, in which the plots will be saved based on reg. and resamp. method.
+    exercise = 6          #If tinkerBool=False, a folder named 'exercise_results' if savePlot is True. This int determines which subfolder to save to.
 
-    terrainBool = False  #Use terrain data or Franke function?
-    n_t = 100            #How many points on the x and y axes if using terrain data
+    terrainBool = True  #Use terrain data or Franke function?
+    n_t = 200            #How many points on the x and y axes if using terrain data
     n_f = 20             #How many points on the x and y axes if using FrankeFunction
-    n = pick_n(n_f,n_t,terrainBool)
-    scaling = False     #Scale the design matrix, X?
+    n = n_t if terrainBool else n_f
+    scaling = True     #Scale the design matrix, X?
     skOLS = False       #Use sklearn in OLS (rather than pseudoinverse)?
     skCV = False        #Use sklearn's cross validation contra own code?
 
-    plotBetaCI  = True  #Plot confidence intervals for beta_hat? Only works for plotTypeInt=0
+    plotBetaCI  = False  #Plot confidence intervals for beta_hat? Only works for plotTypeInt=0
     alpha       = 0.05   #Significance level for confidence intervals
 
-    nBoot = 5         #Number of bootstrap samples
-    K = 10               #Number of folds in cross validation alg.
+    nBoot = 400         #Number of bootstrap samples
+    K = 5               #Number of folds in cross validation alg.
     shuffle = True      #Shuffle the data before performing crossval folds?
 
     #------------------------------------------
-    #S=0.1 #Use this for fixed standard deviation as a function of n
-    S = 40/(n**2)#Is equal to 0.1 when n=20. Ensures sigma scales correctly with n, discussed in report.
-    sigma_v  =       [0.5*S, 1*S, 2*S, 5*S]  #Make a separate plot for each of these sigmas
+    S = 0 if terrainBool else 40/(n**2)#Is equal to 0.1 when n=20. Ensures sigma scales 'correctly?'
+    # with n, discussed in report.
+    #S = 40/(n**2)
+    sigma_v  =       [0.1*S, 1*S, 2*S, 10*S]  #Make a separate plot for each of these sigmas
     #sigma_v  =       [0.1*S, 1*S, 2*S, 10*S]
-    sigma_s  =               [1*S]        #Default standard deviation of epsilon
+    sigma_s  =               [2*S]        #Default standard deviation of epsilon
     #------------------------------------------
     minOrder,maxOrder =       1, 20         #Will make order vector from minOrder to maxOrder
-    order_s =                 [5]          #Default pol.degree if we don't plot vs. degrees
+    order_s =                 [10]           #Default pol.degree if we don't plot vs. degrees
     #------------------------------------------
-    minLoglmd, maxLoglmd =   -4, 0       #Will make log(lambda) vector from minLoglmd to maxLoglmd
-    lambda_s  =               [-3]       #Default lambda value. Must be set
+    minLoglmd, maxLoglmd =   -15,15       #Will make log(lambda) vector from minLoglmd to maxLoglmd
+    lambda_s  =               [-1.21]        #Default lambda value. Must be set
     #------------------------------------------
     sigmasBool = False  #If true, will produce a plot for each std. in sigma_v
 
                   # [ordersBool lamdasBool] = plotTypeInt
-    plotTypeInt =              3
-                  # [  False   0   False  ]  Generate surf plots and print results
+    plotTypeInt =              1
+                  # [  False   0   False  ]  Generate surface plot(s) and print results if using no_resamp.
                   # [  True    1   False  ]  Plots error vs. pol.deg.
                   # [  False   2   True   ]  Plots error vs. lambda
                   # [  True    3   True   ]  Produces heatmap
     savePlot = True #Save plots?
     plotBool = True #Make error/score plots?
 
-    resampInt = 0  #0=no_resamp., 1=bootstrap, 2=crossval
+    resampInt = 0 #0=no_resamp., 1=bootstrap, 2=crossval
     regInt    = 0   #0=OLS,        1=ridge,     2=lasso
 
     allScores = [['bias'],['variance'],['MSEtest'],['MSEtrain'],['R2test'],['R2train']] #Which regression scores one can plot
     #               0           1           2           3           4           5
-    scoresNames = getScores(4,5)
+    scoresNames = getScores(0,1,2)
     #Sets which scores to calculate by passing in the corresponding index from allScores.
     #Function def before main().
 #================================================================================================================================================
@@ -199,7 +190,7 @@ def main():
 
 #================================================================================================================================================
 #======================= USE CONTROL PANEL VALUES TO GENERATE/SET ALL NEEDED VARIABLES ==========================================================
-
+    if(terrainBool):sigmasBool = False
     #This is done using lists.
     #We do this to avoid functions with too many arguments and to simplify the code
 
@@ -268,10 +259,10 @@ def main():
         sigmas,orders,lambdas = hyperPars
         regMeth = regMethods[regInt]     #Unpack chosen regression method name
         if(plotBool==True):
-            if(plotTypeInt==0 and regInt == 0):
+            if(plotTypeInt==0 and resampInt == 0):
                 for s,sigma in enumerate(sigmas): #Loop through in reversed order to have the low sigma plots pop up first
                     surfacePlotter(tinkerBool,savePlot,xr,yr,z_noisyL[s],z_fittedL[s],sigmas[s],orders[0],lambdas[0],regMeth)
-
+                                   #tinkerMode,savePlot,xr,yr,z_orig,z_tilde,sigma,order,lmd,regmeth)
                     if(plotBetaCI==True):
                         beta_CI(tinkerBool,savePlot,beta_hat,var_beta,alpha,orders[0])
 
@@ -279,8 +270,8 @@ def main():
                 for scoreName in scoreRes:
                     print(f"{scoreName+':':<18}{scoreRes[scoreName]}")
 
-            else:
-                scorePlotter(scoreRes,calcAtts,savePlot,terrainBool,tinkerBool,exercise)
+            else:               #scoreRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot
+                scorePlotter(scoreRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot)
 #================================================================================================================================================
 #--------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================

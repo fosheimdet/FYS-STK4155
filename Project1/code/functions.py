@@ -26,24 +26,35 @@ def OLS(X,z,sklearn):
     return beta_hat
 
 def ridge(X,z,lmd):
+    lamb = pow(10,lmd) #The input values are log values in range e.g. -6 to 0
     n = X.shape[1]
     I_n = np.identity(n)
-    beta_hat = np.linalg.pinv(X.T@X+lmd*I_n)@X.T@z
+    print(lamb)
+    beta_hat = np.linalg.pinv(X.T@X+lamb*I_n)@X.T@z
     # print('Ridge: \n')
     # print('beta_hat\n', beta_hat)
     return beta_hat
 
 def lasso(X,z,lmd):
+    #print(lmd)
+    # lmd2 = lmd
+    # lmd2 = pow(10,lmd)
+    # lmd = lmd2
+    print('before',lmd)
+    lamb = pow(10,lmd)
+    print(lamb)
     #max_iter=1e4 #default max_iter is 1e3
     #tol=0.0001 #default os 0.0001?
+    # regLasso = linear_model.Lasso\
+    # (lmd,fit_intercept=False,tol = 0.0001,max_iter = 10000)
     regLasso = linear_model.Lasso\
-    (lmd,fit_intercept=False,tol = 0.001,max_iter = 10000)
+    (lamb,fit_intercept=True,tol = 0.01,max_iter = 1000)
     #
     # regLasso=linear_model.Lasso(alpha=0.015, fit_intercept=False, tol=0.0001,
     #       max_iter=10000, positive=True)
     regLasso.fit(X,z)
     beta_hat = regLasso.coef_
-
+    #print("running lasso")
 
     #regLasso = linear_model.Lasso(lmd)
     # regLasso=linear_model.Lasso(tol, max_iter,alpha=0.015, fit_intercept=False,
@@ -143,6 +154,7 @@ def R2(y_data, y_model):
 def bias(z_test,Ez): return getMSE(z_test, Ez)
 def variance(z_predict, Ez): return getMSE(z_predict, Ez)
 def cov(f_test, z_predict): return np.cov(f_test.reshape(1,-1),z_predict.reshape(1,-1))[0,1]
+
 def MSEtest(z_test, z_predict): return getMSE(z_test, z_predict)
 def MSEtrain(z_train, z_tilde): return getMSE(z_train, z_tilde)
 def R2test(z_test, z_predict): return getR2(z_test, z_predict)
