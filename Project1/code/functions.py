@@ -155,39 +155,89 @@ def R2(y_data, y_model):
     return 1 - np.sum((y_data - y_model) ** 2) / np.sum((y_data - np.mean(y_data)) ** 2)
 
 
-def bias(f_test,Ez): return getMSE(f_test, Ez)
-def variance(z_predict, Ez): return getMSE(z_predict, Ez)
-def cov(f_test, z_predict): return np.cov(f_test.reshape(1,-1),z_predict.reshape(1,-1))[0,1]
-def MSEtest(z_test, z_predict): return getMSE(z_test, z_predict)
-def MSEtrain(z_train, z_tilde): return getMSE(z_train, z_tilde)
-def R2test(z_test, z_predict): return getR2(z_test, z_predict)
-def R2train(z_train, z_tilde): return getR2(z_train, z_tilde)
 
-def getScores(scoreNames,z_test,f_test,z_train,z_predict,z_tilde):
-    scoreValues = []
 
-    if("bias" in scoreNames):
-        Ez = np.mean(z_tilde)
-        scoreValues.append(bias(f_test,Ez))
+def getTheScore(score,z_test,f_test,z_train,z_predict,z_tilde):
+    scoreVal = 0
 
-    if("variance" in scoreNames):
-        Ez = np.mean(z_tilde)
-        scoreValues.append(variance(z_predict,Ez))
+    Ez = np.mean(z_tilde)
+    if(score == "bias"):
+        scoreVal = getMSE(z_test, Ez)
+    if(score == "variance"):
+        scoreVal = getMSE(z_predict, Ez)
+    if(score == "MSEtest"):
+        scoreVal = getMSE(z_test, z_predict)
+        print("MSEtest: ", scoreVal)
+    if(score == "MSEtrain"):
+        scoreVal = getMSE(z_train, z_tilde)
+        print("MSEtrain: ", scoreVal)
+    if(score == "R2test"):
+        scoreVal = getR2(z_test, z_predict)
+    if(score == "R2train"):
+        scoreVal = getR2(z_train, z_tilde)
 
-    if("cov" in scoreNames):
-        #scoreValues.append(cov(f_test, z_predict))
-        scoreValues.append(1)
+    print("scoreVal: ",scoreVal)
 
-    if("MSEtest" in scoreNames):
-        scoreValues.append(MSEtest(z_test, z_predict))
 
-    if("MSEtrain" in scoreNames):
-        scoreValues.append(MSEtrain(z_train, z_tilde))
+    return scoreVal
 
-    if("R2test" in scoreNames):
-        scoreValues.append(R2test(z_test, z_predict))
 
-    if("R2train" in scoreNames):
-        scoreValues.append(R2train(z_train, z_tilde))
+    # if(score == "covariance"):
+    #     scoreVal = np.cov(f_test.reshape(1,-1),z_predict.reshape(1,-1))[0,1]
+ # getScores(scoreNames,z_test,f_test,z_train,z_predict,z_tilde)
+def getScores(emptyScoreScalars,z_test,f_test,z_train,z_predict,z_tilde):
+    #Ensures the scorevalues are always placed in the same order regardless of their order in scoreNames
+    # dummyList = ["bias","variance","MSEtest", "MSEtrain", "R2test", "R2train"]
+    # scoreValues = [0]*len(dummyList)
+    #For reference:
+    # scoreValues={"bias":0,"variance":0, "MSEtest": 0, "MSEtrain": 0, "R2test": 0, "R2train":0}
 
-    return scoreValues
+    for scoreName in emptyScoreScalars:
+        emptyScoreScalars[scoreName] = getTheScore(scoreName,z_test,f_test,z_train,z_predict,z_tilde)
+
+    return emptyScoreScalars  #Not empty anymore, but this way we don't have to create a new list, reducing computational cost?
+
+    # for score in scoreNames:
+    #     if(score in dummyList):
+    #         scoreInd = dummyList.index(score)
+    #         print(scoreInd)
+    #         scoreValues[scoreInd] = getTheScore(score,z_test,f_test,z_train,z_predict,z_tilde)
+    # print(scoreValues)
+    # return scoreValues
+
+
+
+
+    # def bias(f_test,Ez): return getMSE(f_test, Ez)
+    # def variance(z_predict, Ez): return getMSE(z_predict, Ez)
+    # def cov(f_test, z_predict): return np.cov(f_test.reshape(1,-1),z_predict.reshape(1,-1))[0,1]
+    # def MSEtest(z_test, z_predict): return getMSE(z_test, z_predict)
+    # def MSEtrain(z_train, z_tilde): return getMSE(z_train, z_tilde)
+    # def R2test(z_test, z_predict): return getR2(z_test, z_predict)
+    # def R2train(z_train, z_tilde): return getR2(z_train, z_tilde)
+
+
+    # if("bias" in scoreNames):
+    #     biasInd = scoreNames.index("bias")
+    #     scoreValues[biasInd]=bias(f_test,Ez)
+    #
+    # if("variance" in scoreNames):
+    #     varInd = scoreNames.index("variance")
+    #     scoreValues[varInd] = variance(z_predict,Ez)
+    #     scoreValues.append(variance(z_predict,Ez))
+    #
+    # if("cov" in scoreNames):
+    #     #scoreValues.append(cov(f_test, z_predict))
+    #     scoreValues.append(1)
+    #
+    # if("MSEtest" in scoreNames):
+    #     scoreValues.append(MSEtest(z_test, z_predict))
+    #
+    # if("MSEtrain" in scoreNames):
+    #     scoreValues.append(MSEtrain(z_train, z_tilde))
+    #
+    # if("R2test" in scoreNames):
+    #     scoreValues.append(R2test(z_test, z_predict))
+    #
+    # if("R2train" in scoreNames):
+    #     scoreValues.append(R2train(z_train, z_tilde))

@@ -20,7 +20,7 @@ from plotters import titleMaker
 #                   Calculates the specified scores
 #-------------------------------------------------------------------------------
 #===============================================================================
-def doRegression(resampMeth,regMeth,scoreNames,hyperPars):
+def doRegression(resampMeth,regMeth,emptyScoreScalars,hyperPars):
     #===========================================================================
     #Setting common parameters across resampling methods
     #===========================================================================
@@ -47,12 +47,12 @@ def doRegression(resampMeth,regMeth,scoreNames,hyperPars):
     # Dict of containing the requested model assessment scores.
     # The results for each score is stored as matrix with dimensionality
     #(nLambdas,nOrders,nSigmas)
-    scoreRes = {}
-    for score in scoreNames:
-        scoreRes[score] = np.zeros((nLambdas,nOrders,nSigmas))
+    scoreMatrices = {}
+    for score in emptyScoreScalars:
+        scoreMatrices[score] = np.zeros((nLambdas,nOrders,nSigmas))
     #e.g.
     # calcRes =\
-    #  {bias':        np.zeros((nLambdas,nOrders,nSigmas))\
+    # {'bias':        np.zeros((nLambdas,nOrders,nSigmas))\
     # ,'MSEtest':     np.zeros((nLambdas,nOrders,nSigmas))\
     # ,'R2train':     np.zeros((nLambdas,nOrders,nSigmas))}
     #===========================================================================
@@ -70,22 +70,28 @@ def doRegression(resampMeth,regMeth,scoreNames,hyperPars):
     #================================================================================================
     #======== Find model-assessment scores specified in 'scoreNames' ================================
     #================================================================================================
-    scoreValues=[]
+    #scoreValues={"bias":0,"variance":0, "MSEtest": 0, "MSEtrain": 0, "R2test": 0, "R2train":0}
     for s,sigma in enumerate(sigmas):
         for o,order in enumerate(orders):
             X = desMat(xr,yr,order)
             for l,lmd in enumerate(lambdas):
                 if(resampMeth[0]=='no_resamp.'):
-                    scoreValues,z_noisy,z_fitted,beta_hat,var_beta=linReg(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS)
+                    scoreScalars,z_noisy,z_fitted,beta_hat,var_beta=linReg(regMeth,emptyScoreScalars,X,sigma,lmd,z,scaling,skOLS)
                     if(nOrders==1 and nLambdas ==1):
                         z_noisyL.append(z_noisy), z_fittedL.append(z_fitted)
                 elif(resampMeth[0]=='bootstrap'):
-                    scoreValues = bootstrap(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS,nBoot)[0]
+                    scoreScalars = bootstrap(regMeth,emptyScoreScalars,X,sigma,lmd,z,scaling,skOLS,nBoot)[0]
                 elif(resampMeth[0]=='crossval'):
-                    scoreValues = crossValidation(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS,skCV,shuffle,K)[0]
-                for i,scoreName in enumerate(scoreNames):
-                    scoreRes[scoreName][l,o,s]=scoreValues[i]
-    #================================================================================================
-    #================================================================================================
+                    scoreScalars = crossValidation(regMeth,emptyScoreScalars,X,sigma,lmd,z,scaling,skOLS,skCV,shuffle,K)[0]
+                for scoreName in scoreScalars:
+                    scoreMatrices[scoreName][l,o,s] = scoreScalars[scoreName]    #Fill one element each requested score matrix
 
-    return scoreRes,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta
+                # for i,scoreName in enumerate(scoreNames):
+                #     print(scoreName)
+                #     scoreRes[scoreName][l,o,s]=scoreValues[i]
+    #================================================================================================
+    #================================================================================================
+    # print("scoreScalars from doRegression: ", scoreScalars)
+    # print("scoreMatrices from do doRegression: ", scoreMatrices)
+    # print(scoreNames)
+    return scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta

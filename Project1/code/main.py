@@ -31,19 +31,30 @@ from reformat_variables import reformatVariables, generateDesMatPars
 
 
 def getScores(*args):
-    allScores = [['bias'],['variance'],['MSEtest'],['MSEtrain'],['R2test'],['R2train']]
-    # scores = allScores[args[0]]
-    scores = []
+    dummyList = ['bias','variance','MSEtest','MSEtrain','R2test','R2train']
+
+    emptyScoreScalars = {}
     for i in range(0,len(args)):
-        scores += allScores[args[i]]
-    #print(scores)
-    for s in scores:
-        while(scores.count(s)>1):
-            scores.pop(scores.index(s))
+        scoreName = dummyList[args[i]]
+        emptyScoreScalars[scoreName]=0
+    print("Following scores have been requested:\n", emptyScoreScalars,'\n' )
 
-    #print("Following scores requested:\n", scores,'\n' )
+    return emptyScoreScalars
 
-    return scores
+# def getScores(*args):
+#     allScores = [['bias'],['variance'],['MSEtest'],['MSEtrain'],['R2test'],['R2train']]
+#     # scores = allScores[args[0]]
+#     scores = []
+#     for i in range(0,len(args)):
+#         scores += allScores[args[i]]
+#     #print(scores)
+#     # for s in scores:
+#     #     while(scores.count(s)>1):
+#     #         scores.pop(scores.index(s))
+#
+#     print("Following scores requested:\n", scores,'\n' )
+#
+#     return scores
 
 
 #==============================================================================================================================
@@ -61,18 +72,19 @@ def main():
     #This is where all the variables are set
     ONbutton   = True    #Set to False to run main.py without performing regression with the parameters specified below
     tinkerBool = False    #If True, a folder named 'tinkerings' will be created if savePlot is True, in which the plots will be saved based on reg. and resamp. method.
-    exercise = 6          #If tinkerBool=False, a folder named 'exercise_results' if savePlot is True. This int determines which subfolder to save to.
-
-    origSurfPlot = True #Plot original data w. no noise before doing regression? Will be set to False for terrain data
-    showResults  = True #Plot results based on plotTypeInt?
-    doublePlot = False   #Plot the data side by side with the fitted surface?
-    plotOrig = False     #Plot the data or the fit if doublePlot is False? I.e. terrain or noisy Franke.
-
-    savePlot = True #Save plots?
+    exercise = 1          #If tinkerBool=False, a folder named 'exercise_results' if savePlot is True. This int determines which subfolder to save to.
 
     terrainBool = False  #Use terrain data or Franke function?
     n_t = 1000            #How many points on the x and y axes if using terrain data
     n_f = 40             #How many points on the x and y axes if using FrankeFunction
+
+    origSurfPlot = False #Plot original data w. no noise before doing regression? Will be set to False for terrain data
+    showResults  = True #Plot results based on plotTypeInt?
+    doublePlot = True   #Plot the data side by side with the fitted surface?
+    plotOrig = False     #Plot the data or the fit if doublePlot is False? I.e. terrain or noisy Franke.
+
+    savePlot = False #Save plots?
+
 
     scaling = True     #Scale the design matrix, X?
     skOLS = False       #Use sklearn in OLS (rather than pseudoinverse)?
@@ -80,45 +92,44 @@ def main():
 
     plotBetaCI  = False  #Plot confidence intervals for beta_hat? Only works for plotTypeInt=0
     alpha       = 0.05   #Significance level for confidence intervals
-
     #---------------------------------------------------------------------------
     #-----------------------Choose hyperparamets -------------------------------
     #---------------------------------------------------------------------------
     S = 0 if terrainBool else 40/(n_f**2)     #Is equal to 0.1 when n=20. Ensures sigma scales 'correctly?'with n, discussed in report.
-    S = 10*S
+    S = 2*S
     sigma_v  =       [0.1*S, 1*S, 2*S, 10*S]  #Make a separate plot for each of these sigmas
     #sigma_v  =       [0.1*S, 1*S, 2*S, 10*S]
-    sigma_s  =               [1*S]        #Default standard deviation of epsilon
+    sigma_s  =               [2*S]        #Default standard deviation of epsilon
     #------------------------------------------
     minOrder,maxOrder =       0, 20         #Will make order vector from minOrder to maxOrder
-    order_s =                 [2]           #Default pol.degree if we don't plot vs. degrees
+    order_s =                 [10]           #Default pol.degree if we don't plot vs. degrees
     #------------------------------------------
     minLoglmd, maxLoglmd =    -15,15      #Will make log(lambda) vector from minLoglmd to maxLoglmd
     lambda_s  =               [-3]        #Default lambda value. Must be set
     #---------------------------------------------------------------------------
     #------------------------ Choose type of plot-------------------------------
     #---------------------------------------------------------------------------
-    sigmasBool = False #If true, will produce a plot for each element in sigma_v.
+    sigmasBool = True #If true, will produce a plot for each element in sigma_v.
     #Will be set to False for terrain data during reformating
 
                   # [ordersBool lamdasBool] = plotTypeInt
-    plotTypeInt =              0
+    plotTypeInt =              1
                   # [  False   0   False  ]  Generate surface plot(s) and print results if using no_resamp.
                   # [  True    1   False  ]  Plots error vs. pol.deg.
                   # [  False   2   True   ]  Plots error vs. lambda
-                  # [  True    3   True   ]  Produces heatmap
+                  # [  True    3   True   ]  Produces heatmap(s) of error(s)
     # origSurfPlot = True #Plot original data w. no noise before doing regression? Will be set to False for terrain data
     # showResults  = False #Plot results based on plotTypeInt?
     # savePlot = True #Save plots?
     #---------------------------------------------------------------------------
     #Choose resampling technique, regression method and what scores to calculate
     #---------------------------------------------------------------------------
-    resampInt = 0 #=no_resamp., 1=bootstrap, 2=crossval
-    regInt    = 1   #=OLS,        1=ridge,     2=lasso
+    resampInt = 0 #0=no_resamp., 1=bootstrap, 2=crossval
+    regInt    = 1 #0=OLS,        1=ridge,     2=lasso
 
     allScores = [['bias'],['variance'],['MSEtest'],['MSEtrain'],['R2test'],['R2train']] #Which regression scores one can plot
     #               0           1           2           3           4           5
-    scoresNames = getScores(2,1,0)
+    scoreNames = getScores(0,1)
     #Sets which scores to calculate by passing in the corresponding indices from allScores.
 
     nBoot = 20         #Number of bootstrap samples
@@ -128,18 +139,15 @@ def main():
 #------------------------------------------------------------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
-
     dataStr  =  'Using TERRAIN data' if terrainBool else 'Using FRANKE function'
     tinkrStr = 'TINKER mode activated' if tinkerBool else 'Exercise mode active'
     savePlotStr = 'Plot saving ON' if savePlot else 'Plot saving OFF'
     print('\t\t\t',dataStr, '\n')
     print('\t\t\t',tinkrStr,'\n')
     print('\t\t\t',savePlotStr,'\n\n')
-
-
 #================================================================================================================================================
 #------------------------------------------------------------------------------------------------------------------------------------------------
-#----------------------TRANSFORM/REFORMAT ALL THE SET VARIABLES ---------------------------------------------------------------------------------
+#---------------------- TRANSFORM/REFORMAT ALL THE SET VARIABLES --------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
     print('Reformatting variables\n')
@@ -147,7 +155,7 @@ def main():
     n = n_t if terrainBool else n_f
     if(terrainBool):sigmasBool = False
 
-    resampMeth,regMeth,scoresNames,hyperPars=reformatVariables(\
+    resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(\
     \
      tinkerBool,exercise\
     ,terrainBool,n_t,n_f\
@@ -157,51 +165,27 @@ def main():
     ,minOrder,maxOrder,order_s\
     ,minLoglmd, maxLoglmd, lambda_s\
     ,sigmasBool,plotTypeInt,origSurfPlot,savePlot\
-    ,resampInt,regInt,allScores,scoresNames\
+    ,resampInt,regInt,allScores,scoreNames\
     ,nBoot,K,shuffle)
 
     #This is done using lists.
     #We do this to avoid functions with too many arguments and to simplify the code
-
 #================================================================================================================================================
-#================================================================================================================================================
-#Finished generating/setting variables.
-    # if(origSurfPlot):
-    #     xr,yr,z=generateDesMatPars(terrainBool,n)
-    #     surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z)
-
-    #Plot original data
-    # if(origSurfPlot):
-    #         xr,yr,z=generateDesMatPars(terrainBool,n)
-    #     if(sigmasBool == True):
-    #         m_zNoisy = addNoise(z,sigma_v[-1])
-    #         surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z)
-    #     elif(sigmasBool == False):
-    #         m_zNoisy = addNoise(z,sigma_s)
-    #         surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z)
-#Run doRegression to produce and (save?) plot(s) and return the score results
-#as matrices.
-#================================================================================================================================================
-#--------------------------  CALCULATE RESULTS  ------------------------------------------------------------------------------------------------
-#================================================================================================================================================
+#------------------------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------  CALCULATE RESULTS  --------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
     if(ONbutton):
-        # dataStr  =  'Using TERRAIN data' if terrainBool else 'Using FRANKE function'
-        # tinkrStr = 'TINKER mode activated' if tinkerBool else 'Exercise mode active'
-        # savePlotStr = 'Plot saving ON' if savePlot else 'Plot saving OFF'
-        # print('\t\t\t',dataStr, '\n')
-        # print('\t\t\t',tinkrStr,'\n')
-        # print('\t\t\t',savePlotStr,'\n\n')
-
-        print('Performing regression and calculating ', scoresNames,'\n')
+        #print('Performing regression and calculating ', scoresNames,'\n')
+        # print('scoreNames after reformatting, before regression: ', scoreNames,'\n')
         t_start = time.time()
         # dic       dict    list     list     list      list
-        scoreRes,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=doRegression(resampMeth,regMeth,scoresNames,hyperPars)
+        scoreRes,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=doRegression(resampMeth,regMeth,emptyScoreScalars,hyperPars)
         t_end = time.time()
         print('doRegression time: ', t_end-t_start,'sec\n')
 
 #================================================================================================================================================
-#--------------------------------  PLOT RESULTS  -------------------------------------------------------------------------------------------------------
+#--------------------------------  SHOW RESULTS  ------------------------------------------------------------------------------------------------
 #================================================================================================================================================
         sigmas,orders,lambdas = hyperPars
         xr,yr=generateDesMatPars(terrainBool,n)[0:2]
@@ -209,9 +193,10 @@ def main():
             #print("Plotting results")
             if(plotTypeInt == 0 and resampInt == 0):
                 for s,sigma in enumerate(sigmas):
-                    surfacePlotter(calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,exercise,savePlot,z_noisyL[s],z_fittedL[s],sigmas[s])
-                                   #calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,exercise,savePlot,z_noisy,z_fitted,sigma
-                                   #tinkerMode,savePlot,xr,yr,z_orig,z_tilde,sigma,order,lmd,regmeth)
+                    if(doublePlot == True or plotOrig == True):
+                        surfacePlotter(scoreRes,calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool\
+                        ,exercise,savePlot,z_noisyL[s],z_fittedL[s],sigmas[s],s)
+
                     if(plotBetaCI==True):
                         beta_CI(tinkerBool,savePlot,beta_hat,var_beta,alpha,orders[0])
 
@@ -222,17 +207,14 @@ def main():
             else:
                 print("Plotting scores vs hyperparameter(s)")
                 scorePlotter(scoreRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot)
+                print('\nRegression scores for', 'sigma = ', sigmas, ': ')
+                for scoreName in scoreRes:
+                    print(f"{scoreName+':':<18}{scoreRes[scoreName]}")
 #================================================================================================================================================
-#--------------------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
-    #surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z_noisyL[0])
 
-    # if(origSurfPlot):
-    #     if(sigmasBool == True):
-    #         surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z_noisyL[-1],z_dummy,sigmas[-1])
-    #     elif(sigmasBool == False):
-    #         surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z_noisyL[-1],z_dummy,sigmas[-1])
-    # # plt.show()
+
 
 if __name__ =="__main__":
     main()

@@ -30,7 +30,6 @@ scoreLineSpec =\
 ,'R2test':      ['blueviolet', 'solid'  ,(2,1)]\
 ,'R2train':     ['blueviolet',  '--'    ,(2,1)]}
 
-
 def titleMaker(terrainBool,sigma,regMeth,resampMeth,nBoot,K,n,lambdas,orders):
     dataTypeStr = ''
     if(terrainBool):
@@ -69,6 +68,67 @@ def titleMaker(terrainBool,sigma,regMeth,resampMeth,nBoot,K,n,lambdas,orders):
 
     return heatMapTitle,normPlotTitle, heatMapFilename, normPlotFilename
 #==================================================================================================
+
+#
+# #==================================================================================================
+# def surfPlotStringMaker(doublePlot,plotOrig,terrainBool,tinkerBool,regMeth,order,lmd,sigma):
+#         #Plot titles for single plots
+#         SPtitle_fitted = ''
+#         SPtitle_noisy = ''
+#         #filename for singleplots
+#         SPfilename_fitted = ''
+#         SPfilename_noisy = ''
+#         #Plot titles for double plot
+#         DPfilename_fitted = ''
+#         DPfilename_noisy = ''
+#         #filename for double plots
+#         DPfilename = ''
+#
+#
+#         orderStr = f'pol.deg={order}'
+#         orderStr_f = f'p={order}'
+#         sigmaStr ='' if(terrainBool) else r'$\sigma_{\epsilon}=$'+f'{sigma}'
+#         sigmaStr_f ='' if(terrainBool) else 'std=' + f'{sigma:.2f}'
+#         lmdStr = '' if (regMeth=='OLS') else r'$\log{\lambda}=$'+f'{lmd:0.2f}'
+#         lmdStr_f='' if (regMeth=='OLS') else 'lmd='+f'{lmd:0.2f}'
+#
+#         tinkerStr = 'tinkering' if tinkerBool else 'exercises'
+#         terrainStr = 'terrain' if terrainBool else 'Franke'
+#         if(terrainBool==True):
+#             terrainStr = 'terrain'
+#         else:
+#             terrainStr = 'Franke'
+#         surfaceType = 'data' if plotOrig else 'fit'
+#         subfolder = tinkerStr+'/surface_plots/'+terrainStr+f'/{regMeth}/'
+#         #-----------------------------------------------------------------------
+#         #                           Filenames
+#         #-----------------------------------------------------------------------
+#         #Double plot:-----------------------------------------------------------
+#         DPfilename = subfolder+terrainStr+f'_{regMeth}_'\
+#         +sigmaStr_f+'_'+orderStr_f+'_'+lmdStr_f
+#
+#         #Single plots:----------------------------------------------------------
+#         SPfilename_fitted  = subfolder+terrainStr+f'_{regMeth}_'\
+#         +sigmaStr_f+'_'+orderStr_f+'_'+lmdStr_f+'_SP'
+#
+#         SPfilename_noisy = subfolder+terrainStr+'_'+surfaceType+'_'+sigmaStr_f
+#         #-----------------------------------------------------------------------
+#         #-----------------------------------------------------------------------
+#         #                           Titles
+#         #-----------------------------------------------------------------------
+#         #Double plot:-----------------------------------------------------------
+#         DPtitle_fitted = f'{regMeth} fit, '+orderStr+ '  '+ lmdStr
+#
+#         DPtitle_noisy = terrainStr+' data'+'\n'+f'n={n}' + ',  '+sigmaStr
+#         #Single plots:----------------------------------------------------------
+#         SPtitle_fitted = terrainStr+' data, '+DPtitle_fitted+'  '+sigmaStr
+#         SPtitle_noisy= DPtitle_noisy
+#         #-----------------------------------------------------------------------
+#         DPfilename+='.png'
+#         SPfilename = SPfilename_noisy if(plotOrig) else SPfilename_fitted
+#         SPfilename +='.png'
+#         SPtitle = SPtitle_noisy if(plotOrig) else SPtitle_fitted
+#         return subfolder,SPfilename,SPtitle,DPfilename,DPtitle_noisy,DPtitle_fitted
 
 
 #====================================================================================================================
@@ -214,27 +274,25 @@ def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
 #--------------------------------------------------------------------------------------------------------------------
 #====================================================================================================================
 
-
-def surfPlotStringMaker(doublePlot,plotOrig,terrainBool,tinkerBool,regMeth,order,lmd,sigma):
+#==================================================================================================
+def surfPlotStringMaker(doublePlot,plotOrig,terrainBool,tinkerBool,regMeth,n,order,lmd,sigma):
         #Plot titles for single plots
         SPtitle_fitted = ''
         SPtitle_noisy = ''
         #filename for singleplots
         SPfilename_fitted = ''
         SPfilename_noisy = ''
-
         #Plot titles for double plot
         DPfilename_fitted = ''
         DPfilename_noisy = ''
         #filename for double plots
         DPfilename = ''
 
+
         orderStr = f'pol.deg={order}'
         orderStr_f = f'p={order}'
-
         sigmaStr ='' if(terrainBool) else r'$\sigma_{\epsilon}=$'+f'{sigma}'
         sigmaStr_f ='' if(terrainBool) else 'std=' + f'{sigma:.2f}'
-
         lmdStr = '' if (regMeth=='OLS') else r'$\log{\lambda}=$'+f'{lmd:0.2f}'
         lmdStr_f='' if (regMeth=='OLS') else 'lmd='+f'{lmd:0.2f}'
 
@@ -245,10 +303,7 @@ def surfPlotStringMaker(doublePlot,plotOrig,terrainBool,tinkerBool,regMeth,order
         else:
             terrainStr = 'Franke'
         surfaceType = 'data' if plotOrig else 'fit'
-        print(terrainBool)
-
         subfolder = tinkerStr+'/surface_plots/'+terrainStr+f'/{regMeth}/'
-
         #-----------------------------------------------------------------------
         #                           Filenames
         #-----------------------------------------------------------------------
@@ -266,34 +321,21 @@ def surfPlotStringMaker(doublePlot,plotOrig,terrainBool,tinkerBool,regMeth,order
         #                           Titles
         #-----------------------------------------------------------------------
         #Double plot:-----------------------------------------------------------
-        DPtitle_fitted = f'{regMeth} fit '+'\n'\
-        +orderStr+ '  '+ lmdStr
+        DPtitle_fitted = f'{regMeth} fit, '+orderStr+ '  '+ lmdStr
 
-        DPtitle_noisy = terrainStr+' data'+'\n'+sigmaStr
+        DPtitle_noisy = terrainStr+' data'+'\n'+f'n={n}' + ',  '+sigmaStr
         #Single plots:----------------------------------------------------------
         SPtitle_fitted = terrainStr+' data, '+DPtitle_fitted+'  '+sigmaStr
-
         SPtitle_noisy= DPtitle_noisy
         #-----------------------------------------------------------------------
-
         DPfilename+='.png'
-
         SPfilename = SPfilename_noisy if(plotOrig) else SPfilename_fitted
         SPfilename +='.png'
-
-
         SPtitle = SPtitle_noisy if(plotOrig) else SPtitle_fitted
-
         return subfolder,SPfilename,SPtitle,DPfilename,DPtitle_noisy,DPtitle_fitted
 
 
-
-
-
-
-#def surfacePlotter(tinkerMode,savePlot,xr,yr,z_orig,z_tilde,sigma,order,lmd,regmeth)
-#surfacePlotter(calcAtts,doublePlot,plotOrig,tinkerBool,exercise,savePlot,z_noisyL[s],z_fittedL[s],sigmas[s])
-def surfacePlotter(calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,exercise,savePlot,z_noisy,z_fitted,sigma):
+def surfacePlotter(scoreRes,calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,exercise,savePlot,z_noisy,z_fitted,sigma,iterationInd):
     # calcAtts = {'hyperPars': hyperPars,
     #         'plotTitleAtts':[regMeth,resampMeth,nBoot,K,n]}
 
@@ -312,13 +354,9 @@ def surfacePlotter(calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,exercise,
     sigmas,orders,lambdas = hyperPars
     order = orders[0]
     lmd = lambdas[0]
-
-
     #---------------------------------------------------------------------------
     #---------------------------------------------------------------------------
-
     cmapStr = 'ocean'
-
     cmapStr = 'viridis'
     azimuth = 20
     theta = 30
@@ -328,12 +366,12 @@ def surfacePlotter(calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,exercise,
         cmapStr = 'terrain'
         Lwidth = 0.1
         azimuth = 45+5+1
-        theta = 90+45+45-10-5-10-20
+        theta = 90+45+45-10-5-10-17
 
     Z_noisy, Z_fitted = z_noisy.reshape(n,n), z_fitted.reshape(n,n)
 
     subfolder,SPfilename,SPtitle,DPfilename,DPtitle_noisy,DPtitle_fitted=\
-    surfPlotStringMaker(doublePlot,plotOrig,terrainBool,tinkerBool,regMeth,order,lmd,sigma)
+    surfPlotStringMaker(doublePlot,plotOrig,terrainBool,tinkerBool,regMeth,n,order,lmd,sigma)
 
     if(savePlot):
         if not os.path.exists(subfolder):
@@ -385,15 +423,37 @@ def surfacePlotter(calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,exercise,
         ax = fig.add_subplot(122, projection='3d')
         #ax.scatter(xs = heights, ys = weights, zs = ages)
         surf = ax.plot_surface(xx,yy,Z_fitted, cmap = cmapStr,linewidth=Lwidth, alpha = alpha_value, edgecolor = 'k')
-        #surf = ax.plot_surface(xx,yy,Z_fitted, cmap='viridis', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
 
-        ax.set_title(DPtitle_fitted)
+        bias,var,MSEtest,MSEtrain,R2test,R2train = "","","","","",""
+
+
+
+        if("bias" in scoreRes):
+            bias = "bias: " +f"{scoreRes['bias'][0][0][iterationInd]:.3f}"
+        if("variance" in scoreRes):
+            var = "var: " +f"{scoreRes['variance'][0][0][iterationInd]:.3f}\n"
+        if("MSEtest" in scoreRes):
+            MSEtest = "MSEtest: "+f"{scoreRes['MSEtest'][0][0][iterationInd]:.3f}"
+        if("MSEtrain" in scoreRes):
+            MSEtrain = "MSEtrain: "+f"{scoreRes['MSEtrain'][0][0][iterationInd]:.3f}\n"
+        if("R2test" in scoreRes):
+            R2test = "R2test: "+f"{scoreRes['R2test'][0][0][iterationInd]:.3f}"
+        if("R2train" in scoreRes):
+            R2train ="R2train: "+ f"{scoreRes['R2train'][0][0][iterationInd]:.3f}"
+        # bias = scoreRes["bias"][0][0][iterationInd]
+        # biasVal = "Not calculated" if(bias==0) else bias
+
+        #varVal = scoreRes["variance"][0][0][iterationInd]
+
+        ax.set_title(DPtitle_fitted+"\n"+bias+ "  "+var +"  "+MSEtest+"  "+MSEtrain\
+        + R2test + "  " + R2train)
         #ax.set_zlim(-0.10, 1.40)
         ax.zaxis.set_major_locator(LinearLocator(10))
         ax.zaxis.set_major_formatter(FormatStrFormatter('%0.02f'))
         ax.set_xlabel('x')
         ax.set_ylabel('y')
         ax.view_init(azimuth,theta)
+        print("saving figure in:\n", DPfilename)
         if(savePlot):
             plt.savefig(DPfilename)
         plt.show()
@@ -440,255 +500,3 @@ def beta_CI(tinkerBool,savePlot,beta_hat,var_beta,alpha,order):
         plt.savefig(f'CI_beta_order{order}.png')
     plt.show()
 #===============================================================================
-
-
-
-
-
-#====================================================================================================================
-#--------------------------------------------------------------------------------------------------------------------
-#       Makes surface plots of both the original data and the fitted function
-#--------------------------------------------------------------------------------------------------------------------
-#====================================================================================================================
-
-
-# #def surfacePlotter(tinkerMode,savePlot,xr,yr,z_orig,z_tilde,sigma,order,lmd,regmeth)
-# def surfacePlotter(calcAtts,terrainBool,tinkerBool,exercise,savePlot,xr,yr,z_orig,*args):
-#     n = int(np.sqrt(len(xr)))
-#     xx = xr.reshape(n,n)
-#     yy = yr.reshape(n,n)
-#
-#     #Setting default optional argument values:
-#     #---------------------------------------------------------------------------
-#     z_fitted,         sigma, order,  lmd, regMeth =\
-#     np.zeros(n**2+1),    0 ,     5, 1e-5, 'OLS'
-#
-#     # z_fitted,order,sigma,regMeth,lmd =Z_orig, 5, 0.1, 'OLS', 0
-#
-#     paramList = [z_fitted, sigma, order, lmd, regMeth]
-#
-#     for i in range(0,len(args)):
-#         paramList[i] = args[i]
-#
-#     # z_fitted, sigma, order, lmd, regMeth = paramList
-#     # resampMeth = calcAtts['plotTitleAtts']
-#     # lmd =
-#
-#     #---------------------------------------------------------------------------
-#
-#     #-------------------------------------------------------------------------------
-#     #    If Z_tilde is not included in the function's argument list, plot only Z_orig.
-#     #    Otherwise plot both
-#     #-------------------------------------------------------------------------------
-#
-#     if(abs(len(z_fitted)-len(z_orig))>0):
-#     #if(len(z_fitted)==len(z_orig)):
-#         Z_orig = z_orig.reshape(n,n)
-#         fig = plt.figure()
-#         ax = fig.gca(projection='3d')
-#         #surf = ax.plot_surface(xx, yy, Z_orig, cmap=cm.coolwarm,linewidth=0, antialiased=False)
-#         #surf = ax.plot_surface(xx, yy, Z_orig, cmap=cm.coolwarm,linewidth=0.3, edgecolor = 'k', alpha= 0.8,antialiased=False)
-#         #surf = ax.plot_surface(xx,yy,Z_orig, cmap='coolwarm_r', linewidth=0.3, alpha = 0.7, edgecolor = 'k')
-#         surf = ax.plot_surface(xx,yy,Z_orig, cmap='viridis', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
-#         # Plot the surface.
-#
-#         # Customize the z axis.
-#         #ax.set_zlim(-0.10, 1.40)
-#         ax.zaxis.set_major_locator(LinearLocator(10))
-#         ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-#
-#         ax.set_xlabel('x')
-#         ax.set_ylabel('y')
-#         # Add a color bar which maps values to colors.
-#         fig.colorbar(surf, shrink=0.5, aspect=5)
-#         ax.view_init(20, 30)
-#         #m_dataTypeStr = "Terrain data" if(not terrainBool) else 'Franke Function, no noise'
-#         if(terrainBool):
-#             plt.title(r"Terrain data"+"\n"+ f"n={n}")
-#         else:
-#             # plt.title(r"The Franke function"+"\n"+ f"n={n},  "+"$\sigma_{\epsilon}$" + f"= {sigma:.4f}")
-#             plt.title(r"The Franke function"+"\n"+ f"n={n}"+ r", $\sigma_{\epsilon}$" + f"= {sigma:.3f}")
-#         plt.show()
-#     else:
-#         Z_orig, Z_fitted = z_orig.reshape(n,n), z_fitted.reshape(n,n)
-#         fig = plt.figure(figsize=(8,4))
-#         #First plot
-#         ax = fig.add_subplot(121, projection='3d')
-#         #surf = ax.plot_surface(xx,yy,Z_orig, cmap = cm.coolwarm, linewidth=0, antialiased=False)
-#         surf = ax.plot_surface(xx,yy,Z_orig, cmap='viridis', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
-#         #m_dataTypeStr = "Terrain data" if(terrainBool) else 'Franke Function, no noise'
-#         if(terrainBool):
-#             ax.set_title("Terrain data"+"\n"+ f"n={n}")
-#         else:
-#             ax.set_title("Franke function"+"\n"+ f"n={n}" + r", $\sigma_{\epsilon}$" + f"= {sigma:.4f}")
-#         #Customize the z axis.
-#         #ax.set_zlim(-0.10, 1.40)
-#         ax.zaxis.set_major_locator(LinearLocator(10))
-#         ax.zaxis.set_major_formatter(FormatStrFormatter('%0.02f'))
-#         ax.set_xlabel('x')
-#         ax.set_ylabel('y')
-#         ax.view_init(20, 30)
-#         # Add a color bar which maps values to colors
-#         #fig.colorbar(surf, shrink=0.5, aspect = 5)
-#
-#         #Second plot
-#         ax = fig.add_subplot(122, projection='3d')
-#         #ax.scatter(xs = heights, ys = weights, zs = ages)
-#         # Z_tilde = np.zeros(Z_orig.shape)
-#         #surf = ax.plot_surface(xx,yy,Z_fitted, cmap = cm.coolwarm, alpha=1,linewidth=0, antialiased=False)
-#         surf = ax.plot_surface(xx,yy,Z_fitted, cmap='viridis', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
-#         titleStr = ''
-#         if(regMeth=='ridge' or regMeth=='lasso'):
-#             titleStr = f', '+r'$\log{\lambda}=$'+f'{lmd:0.2f}'# f'{np.log10(lambdas[0]):.2f}'
-#         ax.set_title(regMeth+f' fit\n pol.deg={order}'+titleStr)
-#         #ax.set_zlim(-0.10, 1.40)
-#         ax.zaxis.set_major_locator(LinearLocator(10))
-#         ax.zaxis.set_major_formatter(FormatStrFormatter('%0.02f'))
-#         ax.set_xlabel('x')
-#         ax.set_ylabel('y')
-#         ax.view_init(20, 30)
-#         if(tinkerBool==True):
-#             subfolder_surfplot = "tinkerings/surface_plots/"+f"{regMeth}/"
-#         elif(tinkerBool==False):
-#             subfolder_surfplot = "exercise_results/surface_plots/"+f'{regMeth}/'+f'p={order}/'+f'lmd={lmd}/'
-#         #if(savePlot):
-#         if not os.path.exists(subfolder_surfplot):
-#             os.makedirs(subfolder_surfplot)
-#         #tinkerStr = 'tinkering/' if tinkerBool else 'exercises/'
-#         if(savePlot):
-#             plt.savefig(subfolder_surfplot+f'{regMeth}_'+f'surfaceInterpol_' + 'pol_order={order}__n={n}__'\
-#             +r'\sigma_{\epsilon}$=' + f'{sigma}.png')
-#         #print('From end of surfacePlotter')
-#         plt.show()
-#
-#
-#
-#
-#         # if(savePlot):
-#         #     if not os.path.exists(subfolder):
-#         #         os.makedirs(subfolder)
-#         #     plt.savefig(subfolder+f'pol.deg.={order}__n={n}__'\
-#         #     +r'\sigma_{\epsilon}$=' + f'{sigma}.png')
-#
-#             # if(tinkerBool==True):
-#             #     subfolder_surfplot = "tinkerings/surface_plots/"
-#             # elif(tinkerBool==False):
-#             #     subfolder_surfplot = "exercise_results/surface_plots/"
-#             # #if(savePlot):
-#             # if not os.path.exists(subfolder_surfplot):
-#             #     os.makedirs(subfolder_surfplot)
-#             # #tinkerStr = 'tinkering/' if tinkerBool else 'exercises/'
-#
-#
-#             # if(savePlot):
-#             #     plt.savefig(subfolder_surfplot+f'linReg_surface_order={order}__n={n}__'\
-#             #     +r'\sigma_{\epsilon}$=' + f'{sigma}.png')
-#             #print('From end of surfacePlotter')
-#
-#
-#
-#
-#
-#
-#     #
-#     #
-#     #
-#     # fig1 = plt.figure()
-#     # ax1 = fig1.gca(projection='3d')
-#     # fig2 = plt.figure(figsize=(8,4))
-#     # #First plot
-#     # ax2 = fig2.add_subplot(121, projection='3d')
-#     # if(len(z_fitted)!=len(z_orig)):
-#     #
-#     # #if(len(z_fitted)==len(z_orig)):
-#     #
-#     #     Z_orig = z_orig.reshape(n,n)
-#     #     # fig = plt.figure()
-#     #     # ax = fig.gca(projection='3d')
-#     #     #surf = ax.plot_surface(xx, yy, Z_orig, cmap=cm.coolwarm,linewidth=0, antialiased=False)
-#     #     #surf = ax.plot_surface(xx, yy, Z_orig, cmap=cm.coolwarm,linewidth=0.3, edgecolor = 'k', alpha= 0.8,antialiased=False)
-#     #     #surf = ax.plot_surface(xx,yy,Z_orig, cmap='coolwarm_r', linewidth=0.3, alpha = 0.7, edgecolor = 'k')
-#     #     surf1 = ax1.plot_surface(xx,yy,Z_orig, cmap='viridis', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
-#     #     fig1.colorbar(surf1, shrink=0.5, aspect=5)
-#     #     # # Plot the surface.
-#     #     #
-#     #     # fig1.colorbar(surf, shrink=0.5, aspect=5)
-#     #
-#     # else:
-#     #     Z_orig, Z_fitted = z_orig.reshape(n,n), z_fitted.reshape(n,n)
-#     #
-#     #     fig2 = plt.figure(figsize=(8,4))
-#     #     #First plot
-#     #     ax2 = fig2.add_subplot(121, projection='3d')
-#     #     surf2 = ax2.plot_surface(xx,yy,Z_orig, cmap='viridis', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
-#     #     #m_dataTypeStr = "Terrain data" if(terrainBool) else 'Franke Function, no noise'
-#     #     if(terrainBool):
-#     #         ax2.set_title("Terrain data"+"\n"+ f"n={n}")
-#     #     else:
-#     #         ax2.set_title("Franke function"+"\n"+ f"n={n}" + r", $\sigma_{\epsilon}$" + f"= {sigma:.4f}")
-#     #
-#     #     #Second plot
-#     #     ax2=fig2.add_subplot(122, projection='3d')
-#     #     #ax2.scatter(xr, yr, z_orig)
-#     #     # Z_tilde = np.zeros(Z_orig.shape)
-#     #     #surf = ax.plot_surface(xx,yy,Z_fitted, cmap = cm.coolwarm, alpha=1,linewidth=0, antialiased=False)
-#     #     surf2 = ax2.plot_surface(xx,yy,Z_fitted, cmap='viridis', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
-#     #     titleStr = ''
-#     #     if(regMeth=='ridge' or regMeth=='lasso'):
-#     #         titleStr = f', '+r'$\log{\lambda}=$'+f'{lmd:0.2f}'# f'{np.log10(lambdas[0]):.2f}'
-#     #     ax2.set_title(regMeth+f' fit\n pol.deg={order}'+titleStr)
-#     #
-#     #
-#     # # Add a color bar which maps values to colors
-#     # #fig2.colorbar(surf2, shrink=0.5, aspect = 5)
-#     # ax2.set_xlabel('x')
-#     # ax2.set_ylabel('y')
-#     # ax2.view_init(20, 30)
-#     # ax2.zaxis.set_major_locator(LinearLocator(10))
-#     # ax2.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-#     #
-#     # ax1.set_xlabel('x')
-#     # ax1.set_ylabel('y')
-#     # ax1.view_init(20, 30)
-#     # ax1.zaxis.set_major_locator(LinearLocator(10))
-#     # ax1.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-#     # plt.show()
-#     #
-#     #
-#     # surf1 = ax1.plot_surface(xx,yy,Z_orig, cmap='viridis', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
-#     # # Plot the surface.
-#     #
-#     #
-#
-#         # dataTypeStr = 'terrain' if (terrainBool) else 'Franke'
-#         # if(tinkerBool):
-#         #     subfolder = "tinkerings/"+dataTypeStr+"/"+regMeth+"/"+resampMeth[0]
-#         #     # subfolder_surfplot = "tinkerings/surface_plots/"
-#         # elif(tinkerBool==False):
-#         #     subfolder = "exercise_results/"+f'exercise{exercise}/'+f'n={n}'
-#         #     # subfolder_surfplot = "exercise_results/surface_plots/"
-#         #
-#         # if(savePlot):
-#         #     if not os.path.exists(subfolder):
-#         #         os.makedirs(subfolder)
-#         #     plt.savefig(subfolder+f'pol.deg.={order}__n={n}__'\
-#         #     +r'\sigma_{\epsilon}$=' + f'{sigma}.png')
-#
-#             # if(tinkerBool==True):
-#             #     subfolder_surfplot = "tinkerings/surface_plots/"
-#             # elif(tinkerBool==False):
-#             #     subfolder_surfplot = "exercise_results/surface_plots/"
-#             # #if(savePlot):
-#             # if not os.path.exists(subfolder_surfplot):
-#             #     os.makedirs(subfolder_surfplot)
-#             # #tinkerStr = 'tinkering/' if tinkerBool else 'exercises/'
-#
-#
-#             # if(savePlot):
-#             #     plt.savefig(subfolder_surfplot+f'linReg_surface_order={order}__n={n}__'\
-#             #     +r'\sigma_{\epsilon}$=' + f'{sigma}.png')
-#             #print('From end of surfacePlotter')
-# #====================================================================================================================
-# #--------------------------------------------------------------------------------------------------------------------
-# #--------------------------------------------------------------------------------------------------------------------
-# #====================================================================================================================
