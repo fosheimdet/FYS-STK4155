@@ -128,10 +128,11 @@ def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
                     lmds_formatted[i] = float("{:.2f}".format(lambdas[i]))
                 M = pd.DataFrame(scoreMat,lmds_formatted,orders)
                 if(scoreStr == 'R2test' or scoreStr == 'R2train'):
-                    ax = sns.heatmap(M,cmap="BuPu_r",linewidths=.0,annot = not savePlot)
+                    ax = sns.heatmap(M,cmap ="YlGnBu",linewidths=.0,annot = not savePlot)
+                    #ax = sns.heatmap(M,cmap="BuPu_r",linewidths=.0,annot = not savePlot)
                 if(scoreStr == 'MSEtest' or scoreStr == 'MSEtrain'):
-                    #ax = sns.heatmap(M,linewidths=.0,annot = not savePlot)
-                    ax = sns.heatmap(M,cmap ="Greens",linewidths=.0,annot = not savePlot)
+                    ax = sns.heatmap(M,linewidths=.0,annot = not savePlot)
+                    #ax = sns.heatmap(M,cmap ="Greens",linewidths=.0,annot = not savePlot)
                 if(scoreStr == 'variance'):
                     ax = sns.heatmap(M,cmap ="Blues",linewidths=.0,annot = not savePlot)
                 if(scoreStr == 'bias'):
@@ -239,13 +240,24 @@ def surfacePlotter(terrainBool,tinkerBool,savePlot,xr,yr,z_orig,*args):
     #    If Z_tilde is not included in the function's argument list, plot only Z_orig.
     #    Otherwise plot both
     #-------------------------------------------------------------------------------
+
+
+    #surf = ax.plot_surface(xx, yy, Z_orig, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+    #surf = ax.plot_surface(xx, yy, Z_orig, cmap=cm.coolwarm,linewidth=0.3, edgecolor = 'k', alpha= 0.8,antialiased=False)
+    # surf = ax.plot_surface(xx,yy,Z_orig, cmap='viridis_r', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
+    # surf = ax.plot_surface(xx,yy,Z_orig, cmap='coolwarm_r', linewidth=0.3, alpha = 0.7, edgecolor = 'k')
+
     if(len(z_fitted)!=len(z_orig)):
+    #if(len(z_fitted)==len(z_orig)):
         Z_orig = z_orig.reshape(n,n)
         fig = plt.figure()
         ax = fig.gca(projection='3d')
-        surf = ax.plot_surface(xx, yy, Z_orig, cmap=cm.coolwarm,
+        #surf = ax.plot_surface(xx, yy, Z_orig, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+        #surf = ax.plot_surface(xx, yy, Z_orig, cmap=cm.coolwarm,linewidth=0.3, edgecolor = 'k', alpha= 0.8,antialiased=False)
+        #surf = ax.plot_surface(xx,yy,Z_orig, cmap='coolwarm_r', linewidth=0.3, alpha = 0.7, edgecolor = 'k')
+        surf = ax.plot_surface(xx,yy,Z_orig, cmap='viridis', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
         # Plot the surface.
-        linewidth=0, antialiased=False)
+
         # Customize the z axis.
         #ax.set_zlim(-0.10, 1.40)
         ax.zaxis.set_major_locator(LinearLocator(10))
@@ -258,16 +270,17 @@ def surfacePlotter(terrainBool,tinkerBool,savePlot,xr,yr,z_orig,*args):
         ax.view_init(20, 30)
         #m_dataTypeStr = "Terrain data" if(not terrainBool) else 'Franke Function, no noise'
         if(terrainBool):
-            plt.title(r"Original data"+"\n"+ f"n={n}, " +"$\sigma_{\epsilon}$" + f"= {sigma}")
+            plt.title(r"Terrain data"+"\n"+ f"n={n}, " +"$\sigma_{\epsilon}$" + f"= {sigma}")
         else:
-            plt.title(r"Terrain data"+"\n"+ f"n={n}")
+            plt.title(r"The Franke function"+"\n"+ f"n={n}")
         plt.show()
     else:
         Z_orig, Z_fitted = z_orig.reshape(n,n), z_fitted.reshape(n,n)
         fig = plt.figure(figsize=(8,4))
         #First plot
         ax = fig.add_subplot(121, projection='3d')
-        surf = ax.plot_surface(xx,yy,Z_orig, cmap = cm.coolwarm, linewidth=0, antialiased=False)
+        #surf = ax.plot_surface(xx,yy,Z_orig, cmap = cm.coolwarm, linewidth=0, antialiased=False)
+        surf = ax.plot_surface(xx,yy,Z_orig, cmap='viridis', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
         #m_dataTypeStr = "Terrain data" if(terrainBool) else 'Franke Function, no noise'
         if(terrainBool):
             ax.set_title("Terrain data"+"\n"+ f"n={n}")
@@ -287,8 +300,8 @@ def surfacePlotter(terrainBool,tinkerBool,savePlot,xr,yr,z_orig,*args):
         ax = fig.add_subplot(122, projection='3d')
         #ax.scatter(xs = heights, ys = weights, zs = ages)
         # Z_tilde = np.zeros(Z_orig.shape)
-        surf = ax.plot_surface(xx,yy,Z_fitted, cmap = cm.coolwarm, alpha=1,\
-        linewidth=0, antialiased=False)
+        #surf = ax.plot_surface(xx,yy,Z_fitted, cmap = cm.coolwarm, alpha=1,linewidth=0, antialiased=False)
+        surf = ax.plot_surface(xx,yy,Z_fitted, cmap='viridis', linewidth=0.3, alpha = 0.8, edgecolor = 'k')
         titleStr = ''
         if(regMeth=='ridge' or regMeth=='lasso'):
             titleStr = f', '+r'$\log{\lambda}=$'+f'{lmd:0.2f}'# f'{np.log10(lambdas[0]):.2f}'

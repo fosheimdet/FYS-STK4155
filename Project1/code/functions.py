@@ -165,9 +165,10 @@ def R2train(z_train, z_tilde): return getR2(z_train, z_tilde)
 
 def getScores(scoreNames,z_test,f_test,z_train,z_predict,z_tilde):
     scoreValues = []
+
     if("bias" in scoreNames):
         Ez = np.mean(z_tilde)
-        scoreValues.append(bias(z_test,Ez))
+        scoreValues.append(bias(f_test,Ez))
 
     if("variance" in scoreNames):
         Ez = np.mean(z_tilde)
