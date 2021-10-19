@@ -40,15 +40,9 @@ def getScores(*args):
     for s in scores:
         while(scores.count(s)>1):
             scores.pop(scores.index(s))
-    #print(scores)
 
-    print("Following scores requested:\n", scores,'\n' )
-    # scores = []
-    # for i in args:
-    #     print(args[i])
-     # scores = []
-     #    for scoreInd in enumerate(args):
-     #        scores.append(allScores[scoreInd])
+    #print("Following scores requested:\n", scores,'\n' )
+
     return scores
 
 
@@ -69,7 +63,14 @@ def main():
     tinkerBool = False    #If True, a folder named 'tinkerings' will be created if savePlot is True, in which the plots will be saved based on reg. and resamp. method.
     exercise = 6          #If tinkerBool=False, a folder named 'exercise_results' if savePlot is True. This int determines which subfolder to save to.
 
-    terrainBool = True  #Use terrain data or Franke function?
+    origSurfPlot = True #Plot original data w. no noise before doing regression? Will be set to False for terrain data
+    showResults  = True #Plot results based on plotTypeInt?
+    doublePlot = False   #Plot the data side by side with the fitted surface?
+    plotOrig = False     #Plot the data or the fit if doublePlot is False? I.e. terrain or noisy Franke.
+
+    savePlot = True #Save plots?
+
+    terrainBool = False  #Use terrain data or Franke function?
     n_t = 1000            #How many points on the x and y axes if using terrain data
     n_f = 40             #How many points on the x and y axes if using FrankeFunction
 
@@ -90,14 +91,14 @@ def main():
     sigma_s  =               [1*S]        #Default standard deviation of epsilon
     #------------------------------------------
     minOrder,maxOrder =       0, 20         #Will make order vector from minOrder to maxOrder
-    order_s =                 [10]           #Default pol.degree if we don't plot vs. degrees
+    order_s =                 [2]           #Default pol.degree if we don't plot vs. degrees
     #------------------------------------------
     minLoglmd, maxLoglmd =    -15,15      #Will make log(lambda) vector from minLoglmd to maxLoglmd
-    lambda_s  =               [-2]        #Default lambda value. Must be set
+    lambda_s  =               [-3]        #Default lambda value. Must be set
     #---------------------------------------------------------------------------
     #------------------------ Choose type of plot-------------------------------
     #---------------------------------------------------------------------------
-    sigmasBool = True #If true, will produce a plot for each element in sigma_v.
+    sigmasBool = False #If true, will produce a plot for each element in sigma_v.
     #Will be set to False for terrain data during reformating
 
                   # [ordersBool lamdasBool] = plotTypeInt
@@ -106,14 +107,14 @@ def main():
                   # [  True    1   False  ]  Plots error vs. pol.deg.
                   # [  False   2   True   ]  Plots error vs. lambda
                   # [  True    3   True   ]  Produces heatmap
-    origSurfPlot = False #Plot original data w. no noise before doing regression? Will be set to False for terrain data
-    showResults  = True #Plot results based on plotTypeInt?
-    savePlot = True #Save plots?
+    # origSurfPlot = True #Plot original data w. no noise before doing regression? Will be set to False for terrain data
+    # showResults  = False #Plot results based on plotTypeInt?
+    # savePlot = True #Save plots?
     #---------------------------------------------------------------------------
     #Choose resampling technique, regression method and what scores to calculate
     #---------------------------------------------------------------------------
     resampInt = 0 #=no_resamp., 1=bootstrap, 2=crossval
-    regInt    = 0   #=OLS,        1=ridge,     2=lasso
+    regInt    = 1   #=OLS,        1=ridge,     2=lasso
 
     allScores = [['bias'],['variance'],['MSEtest'],['MSEtrain'],['R2test'],['R2train']] #Which regression scores one can plot
     #               0           1           2           3           4           5
@@ -121,7 +122,7 @@ def main():
     #Sets which scores to calculate by passing in the corresponding indices from allScores.
 
     nBoot = 20         #Number of bootstrap samples
-    K = 10               #Number of folds in cross validation alg.
+    K = 5               #Number of folds in cross validation alg.
     shuffle = True      #Shuffle the data before performing crossval folds?
 #================================================================================================================================================
 #------------------------------------------------------------------------------------------------------------------------------------------------
@@ -165,16 +166,19 @@ def main():
 #================================================================================================================================================
 #================================================================================================================================================
 #Finished generating/setting variables.
+    # if(origSurfPlot):
+    #     xr,yr,z=generateDesMatPars(terrainBool,n)
+    #     surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z)
 
     #Plot original data
-    if(origSurfPlot):
-        xr,yr,z=generateDesMatPars(terrainBool,n)
-        if(sigmasBool == True):
-            m_zNoisy = addNoise(z,sigma_v[-1])
-            surfacePlotter(terrainBool,tinkerBool,False,xr,yr,m_zNoisy)
-        elif(sigmasBool == False):
-            m_zNoisy = addNoise(z,sigma_s)
-            surfacePlotter(terrainBool,tinkerBool,False,xr,yr,m_zNoisy)
+    # if(origSurfPlot):
+    #         xr,yr,z=generateDesMatPars(terrainBool,n)
+    #     if(sigmasBool == True):
+    #         m_zNoisy = addNoise(z,sigma_v[-1])
+    #         surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z)
+    #     elif(sigmasBool == False):
+    #         m_zNoisy = addNoise(z,sigma_s)
+    #         surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z)
 #Run doRegression to produce and (save?) plot(s) and return the score results
 #as matrices.
 #================================================================================================================================================
@@ -194,19 +198,19 @@ def main():
         # dic       dict    list     list     list      list
         scoreRes,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=doRegression(resampMeth,regMeth,scoresNames,hyperPars)
         t_end = time.time()
-
         print('doRegression time: ', t_end-t_start,'sec\n')
+
 #================================================================================================================================================
 #--------------------------------  PLOT RESULTS  -------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
         sigmas,orders,lambdas = hyperPars
-
         xr,yr=generateDesMatPars(terrainBool,n)[0:2]
         if(showResults == True):
             #print("Plotting results")
             if(plotTypeInt == 0 and resampInt == 0):
                 for s,sigma in enumerate(sigmas):
-                    surfacePlotter(terrainBool,tinkerBool,savePlot,xr,yr,z_noisyL[s],z_fittedL[s],sigmas[s],orders[0],lambdas[0],regMeth)
+                    surfacePlotter(calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,exercise,savePlot,z_noisyL[s],z_fittedL[s],sigmas[s])
+                                   #calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,exercise,savePlot,z_noisy,z_fitted,sigma
                                    #tinkerMode,savePlot,xr,yr,z_orig,z_tilde,sigma,order,lmd,regmeth)
                     if(plotBetaCI==True):
                         beta_CI(tinkerBool,savePlot,beta_hat,var_beta,alpha,orders[0])
@@ -221,6 +225,14 @@ def main():
 #================================================================================================================================================
 #--------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
+    #surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z_noisyL[0])
+
+    # if(origSurfPlot):
+    #     if(sigmasBool == True):
+    #         surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z_noisyL[-1],z_dummy,sigmas[-1])
+    #     elif(sigmasBool == False):
+    #         surfacePlotter(terrainBool,tinkerBool,exercise,False,xr,yr,z_noisyL[-1],z_dummy,sigmas[-1])
+    # # plt.show()
 
 if __name__ =="__main__":
     main()
