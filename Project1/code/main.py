@@ -32,29 +32,12 @@ from reformat_variables import reformatVariables, generateDesMatPars
 
 def getScores(*args):
     dummyList = ['bias','variance','MSEtest','MSEtrain','R2test','R2train']
-
     emptyScoreScalars = {}
     for i in range(0,len(args)):
         scoreName = dummyList[args[i]]
         emptyScoreScalars[scoreName]=0
-    print("Following scores have been requested:\n", emptyScoreScalars,'\n' )
-
+    print("The following scores are being calculated:\n", emptyScoreScalars,'\n' )
     return emptyScoreScalars
-
-# def getScores(*args):
-#     allScores = [['bias'],['variance'],['MSEtest'],['MSEtrain'],['R2test'],['R2train']]
-#     # scores = allScores[args[0]]
-#     scores = []
-#     for i in range(0,len(args)):
-#         scores += allScores[args[i]]
-#     #print(scores)
-#     # for s in scores:
-#     #     while(scores.count(s)>1):
-#     #         scores.pop(scores.index(s))
-#
-#     print("Following scores requested:\n", scores,'\n' )
-#
-#     return scores
 
 
 #==============================================================================================================================
@@ -83,7 +66,7 @@ def main():
     doublePlot = True   #Plot the data side by side with the fitted surface?
     plotOrig = False     #Plot the data or the fit if doublePlot is False? I.e. terrain or noisy Franke.
 
-    savePlot = False #Save plots?
+    savePlot = True #Save plots?
 
 
     scaling = True     #Scale the design matrix, X?
@@ -101,19 +84,19 @@ def main():
     #sigma_v  =       [0.1*S, 1*S, 2*S, 10*S]
     sigma_s  =               [2*S]        #Default standard deviation of epsilon
     #------------------------------------------
-    minOrder,maxOrder =       0, 20         #Will make order vector from minOrder to maxOrder
+    minOrder,maxOrder =       2, 20         #Will make order vector from minOrder to maxOrder
     order_s =                 [10]           #Default pol.degree if we don't plot vs. degrees
     #------------------------------------------
-    minLoglmd, maxLoglmd =    -15,15      #Will make log(lambda) vector from minLoglmd to maxLoglmd
+    minLoglmd, maxLoglmd =    -6,0      #Will make log(lambda) vector from minLoglmd to maxLoglmd
     lambda_s  =               [-3]        #Default lambda value. Must be set
     #---------------------------------------------------------------------------
     #------------------------ Choose type of plot-------------------------------
     #---------------------------------------------------------------------------
-    sigmasBool = True #If true, will produce a plot for each element in sigma_v.
+    sigmasBool = False #If true, will produce a plot for each element in sigma_v.
     #Will be set to False for terrain data during reformating
 
                   # [ordersBool lamdasBool] = plotTypeInt
-    plotTypeInt =              1
+    plotTypeInt =              3
                   # [  False   0   False  ]  Generate surface plot(s) and print results if using no_resamp.
                   # [  True    1   False  ]  Plots error vs. pol.deg.
                   # [  False   2   True   ]  Plots error vs. lambda
@@ -124,15 +107,15 @@ def main():
     #---------------------------------------------------------------------------
     #Choose resampling technique, regression method and what scores to calculate
     #---------------------------------------------------------------------------
-    resampInt = 0 #0=no_resamp., 1=bootstrap, 2=crossval
+    resampInt = 1 #0=no_resamp., 1=bootstrap, 2=crossval
     regInt    = 1 #0=OLS,        1=ridge,     2=lasso
 
     allScores = [['bias'],['variance'],['MSEtest'],['MSEtrain'],['R2test'],['R2train']] #Which regression scores one can plot
     #               0           1           2           3           4           5
-    scoreNames = getScores(0,1)
+    scoreNames = getScores(2,4)
     #Sets which scores to calculate by passing in the corresponding indices from allScores.
 
-    nBoot = 20         #Number of bootstrap samples
+    nBoot = 200         #Number of bootstrap samples
     K = 5               #Number of folds in cross validation alg.
     shuffle = True      #Shuffle the data before performing crossval folds?
 #================================================================================================================================================
@@ -176,14 +159,13 @@ def main():
 #------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
     if(ONbutton):
-        #print('Performing regression and calculating ', scoresNames,'\n')
+        print('Performing regression and calculating scores\n')
         # print('scoreNames after reformatting, before regression: ', scoreNames,'\n')
         t_start = time.time()
         # dic       dict    list     list     list      list
-        scoreRes,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=doRegression(resampMeth,regMeth,emptyScoreScalars,hyperPars)
+        scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=doRegression(resampMeth,regMeth,emptyScoreScalars,hyperPars)
         t_end = time.time()
-        print('doRegression time: ', t_end-t_start,'sec\n')
-
+        print('doRegression() time used: ', t_end-t_start,'sec\n')
 #================================================================================================================================================
 #--------------------------------  SHOW RESULTS  ------------------------------------------------------------------------------------------------
 #================================================================================================================================================
@@ -194,22 +176,22 @@ def main():
             if(plotTypeInt == 0 and resampInt == 0):
                 for s,sigma in enumerate(sigmas):
                     if(doublePlot == True or plotOrig == True):
-                        surfacePlotter(scoreRes,calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool\
+                        surfacePlotter(scoreMatrices,calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool\
                         ,exercise,savePlot,z_noisyL[s],z_fittedL[s],sigmas[s],s)
 
                     if(plotBetaCI==True):
                         beta_CI(tinkerBool,savePlot,beta_hat,var_beta,alpha,orders[0])
 
                 print('\nRegression scores for', 'sigma = ', sigmas, ': ')
-                for scoreName in scoreRes:
-                    print(f"{scoreName+':':<18}{scoreRes[scoreName]}")
+                for scoreName in scoreMatrices:
+                    print(f"{scoreName+':':<18}{scoreMatrices[scoreName]}")
 
             else:
                 print("Plotting scores vs hyperparameter(s)")
-                scorePlotter(scoreRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot)
-                print('\nRegression scores for', 'sigma = ', sigmas, ': ')
-                for scoreName in scoreRes:
-                    print(f"{scoreName+':':<18}{scoreRes[scoreName]}")
+                scorePlotter(scoreMatrices,calcAtts,terrainBool,tinkerBool,exercise,savePlot)
+                # print('\nRegression scores for', 'sigma = ', sigmas, ': ')
+                # for scoreName in scoreMatrices:
+                #     print(f"{scoreName+':':<18}{scoreMatrices[scoreName]}")
 #================================================================================================================================================
 #------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================

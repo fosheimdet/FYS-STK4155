@@ -49,7 +49,7 @@ def linReg(regMeth,emptyScoreScalars,X,sigma,lmd,z,scaling,skOLS):
 
     var_beta = np.diagonal(np.linalg.pinv(X.T@X)*sigma**2) #Should you use X or X_train/X_test?
     #print("scoreValues from linreg: ", scoreValues)
-    return [scoreScalars,z_noisy,z_fitted,beta_hat,var_beta]
+    return scoreScalars,z_noisy,z_fitted,beta_hat,var_beta
 
     # return [bias,variance,cov,MSEtest,MSEtrain,R2test,R2train,Z_orig,
     # Z_tilde,beta_hat,var_beta]

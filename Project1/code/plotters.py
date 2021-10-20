@@ -184,27 +184,35 @@ def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
                 fig0 = plt.figure()
                 scoreMat = calcRes[scoreStr][:,:,s]
                 lmds_formatted=lambdas
+                annotBool = True
+                annotSize = {"size": 10}
                 for i in range(0,nLambdas):
                     lmds_formatted[i] = float("{:.2f}".format(lambdas[i]))
                 M = pd.DataFrame(scoreMat,lmds_formatted,orders)
                 if(scoreStr == 'R2test' or scoreStr == 'R2train'):
-                    ax = sns.heatmap(M,cmap ="YlGnBu",linewidths=.0,annot = not savePlot)
+                    ax = sns.heatmap(M,cmap ="YlGnBu",linewidths=.0,annot = annotBool,annot_kws=annotSize)
                     #ax = sns.heatmap(M,cmap="BuPu_r",linewidths=.0,annot = not savePlot)
                 if(scoreStr == 'MSEtest' or scoreStr == 'MSEtrain'):
-                    ax = sns.heatmap(M,linewidths=.0,annot = not savePlot)
+                    ax = sns.heatmap(M,linewidths=.0,annot = annotBool,annot_kws=annotSize)
                     #ax = sns.heatmap(M,cmap ="Greens",linewidths=.0,annot = not savePlot)
                 if(scoreStr == 'variance'):
-                    ax = sns.heatmap(M,cmap ="Blues",linewidths=.0,annot = not savePlot)
+                    ax = sns.heatmap(M,cmap ="Blues",linewidths=.0,annot = annotBool,annot_kws=annotSize)
                 if(scoreStr == 'bias'):
-                    ax = sns.heatmap(M,cmap ="Reds",linewidths=.0,annot = not savePlot)
+                    ax = sns.heatmap(M,cmap ="Reds",linewidths=.0,annot = annotBool,annot_kws=annotSize)
                     # ax = sns.heatmap(M,cmap ="YlGnBu",linewidths=.0,annot = not savePlot)
                 ax.invert_yaxis()
                 ax.set_yticklabels(ax.get_yticklabels(),rotation=0)
                 ax.set_xlabel('Polynomial degree, p',size='12',**{'fontname':fonts[fontInd]})
                 ax.set_ylabel(r'log$_{10}(\lambda)$', size = '12',**{'fontname':fonts[fontInd]})
                 plt.title(scoreStr + heatMapTitle,size=12, **{'fontname':fonts[fontInd]})
+                # figManager = plt.get_current_fig_manager()
+                # figManager.window.showMaximized()
                 if(savePlot):
-                    plt.savefig(subfolder+"/"+scoreStr+heatMapFilename+'.png')
+                    # mng = plt.get_current_fig_manager()
+                    # mng.resize(*mng.window.maxsize())
+
+                    plt.savefig(subfolder+"/"+scoreStr+heatMapFilename+'.png', bbox_inches='tight')
+                    print("Saving to:\n"+ subfolder+"/"+scoreStr+heatMapFilename+'.png')
                 plt.show()
 
         elif(nLambdas>1 or nOrders>1 ): #Only run in case only one of orders or lambas is a 'vector'
@@ -335,7 +343,7 @@ def surfPlotStringMaker(doublePlot,plotOrig,terrainBool,tinkerBool,regMeth,n,ord
         return subfolder,SPfilename,SPtitle,DPfilename,DPtitle_noisy,DPtitle_fitted
 
 
-def surfacePlotter(scoreRes,calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,exercise,savePlot,z_noisy,z_fitted,sigma,iterationInd):
+def surfacePlotter(scoreMatrices,calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,exercise,savePlot,z_noisy,z_fitted,sigma,iterationInd):
     # calcAtts = {'hyperPars': hyperPars,
     #         'plotTitleAtts':[regMeth,resampMeth,nBoot,K,n]}
 
@@ -428,22 +436,22 @@ def surfacePlotter(scoreRes,calcAtts,doublePlot,plotOrig,terrainBool,tinkerBool,
 
 
 
-        if("bias" in scoreRes):
-            bias = "bias: " +f"{scoreRes['bias'][0][0][iterationInd]:.3f}"
-        if("variance" in scoreRes):
-            var = "var: " +f"{scoreRes['variance'][0][0][iterationInd]:.3f}\n"
-        if("MSEtest" in scoreRes):
-            MSEtest = "MSEtest: "+f"{scoreRes['MSEtest'][0][0][iterationInd]:.3f}"
-        if("MSEtrain" in scoreRes):
-            MSEtrain = "MSEtrain: "+f"{scoreRes['MSEtrain'][0][0][iterationInd]:.3f}\n"
-        if("R2test" in scoreRes):
-            R2test = "R2test: "+f"{scoreRes['R2test'][0][0][iterationInd]:.3f}"
-        if("R2train" in scoreRes):
-            R2train ="R2train: "+ f"{scoreRes['R2train'][0][0][iterationInd]:.3f}"
-        # bias = scoreRes["bias"][0][0][iterationInd]
+        if("bias" in scoreMatrices):
+            bias = "bias: " +f"{scoreMatrices['bias'][0][0][iterationInd]:.3f}"
+        if("variance" in scoreMatrices):
+            var = "var: " +f"{scoreMatrices['variance'][0][0][iterationInd]:.3f}\n"
+        if("MSEtest" in scoreMatrices):
+            MSEtest = "MSEtest: "+f"{scoreMatrices['MSEtest'][0][0][iterationInd]:.3f}"
+        if("MSEtrain" in scoreMatrices):
+            MSEtrain = "MSEtrain: "+f"{scoreMatrices['MSEtrain'][0][0][iterationInd]:.3f}\n"
+        if("R2test" in scoreMatrices):
+            R2test = "R2test: "+f"{scoreMatrices['R2test'][0][0][iterationInd]:.3f}"
+        if("R2train" in scoreMatrices):
+            R2train ="R2train: "+ f"{scoreMatrices['R2train'][0][0][iterationInd]:.3f}"
+        # bias = scoreMatrices["bias"][0][0][iterationInd]
         # biasVal = "Not calculated" if(bias==0) else bias
 
-        #varVal = scoreRes["variance"][0][0][iterationInd]
+        #varVal = scoreMatrices["variance"][0][0][iterationInd]
 
         ax.set_title(DPtitle_fitted+"\n"+bias+ "  "+var +"  "+MSEtest+"  "+MSEtrain\
         + R2test + "  " + R2train)

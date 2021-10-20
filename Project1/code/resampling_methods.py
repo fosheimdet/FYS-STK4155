@@ -8,11 +8,14 @@ from regression_methods import linReg
 
 #===============================================================================
 #===============================================================================
-def crossValidation(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS,skCV,shuffle,K):
+def crossValidation(regMeth,emptyScoreScalars,X,sigma,lmd,z,scaling,skOLS,skCV,shuffle,K):
 
     #Scores from each fold will be stored as row vectors in crossValScores
-    nScores = len(scoreNames)
-    crossValScores = np.zeros((K,nScores))
+    #nScores = len(scoreNames)
+    CVscoreVectors={} #Dict of vectors, corresponding to the different scores,
+    #the elements of which are the score values obtained in a given fold
+    for scoreName in emptyScoreScalars:
+        CVscoreVectors[scoreName] = np.zeros(K)
     X_temp = X
     if(scaling):
         X = StandardPandascaler(X_temp)
@@ -36,7 +39,6 @@ def crossValidation(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS,skCV,shuffle,
         f = f[indices]
 
     beta_hat = np.zeros((X.shape[1],1))#Initialize the optimal reg. param. vector
-    #beta_hat = np.zeros(X.shape[1])#Initialize the optimal reg. param. vector
 
     if(skCV==False):
         for i in range(0,K):
@@ -59,10 +61,9 @@ def crossValidation(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS,skCV,shuffle,
             z_predict = X_test@beta_hat
 
 
-            scoreValues = getScores(scoreNames,z_test,f_test,z_train,z_predict,z_tilde)
-            for ind,score in enumerate(scoreNames):
-                crossValScores[i,ind] = scoreValues[ind]
-
+            scoreScalars = getScores(emptyScoreScalars,z_test,f_test,z_train,z_predict,z_tilde)
+            for scoreName in scoreScalars:
+                CVscoreVectors[scoreName][i] =scoreScalars[scoreName] #i'th fold result
 
     elif(skCV==True):
         kf = KFold(n_splits=K)
@@ -80,18 +81,22 @@ def crossValidation(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS,skCV,shuffle,
             z_tilde = LR.predict(X_train)
             z_predict = LR.predict(X_test)
 
-            scoreValues = getScores(scoreNames,z_test,f_test,z_train,z_predict,z_tilde)
-            for ind,score in enumerate(scoreNames):
-                crossValScores[i,ind] = scoreValues[ind]
+
+            scoreScalars = getScores(emptyScoreScalars,z_test,f_test,z_train,z_predict,z_tilde)
+            for scoreName in scoreScalars:
+                CVscoreVectors[scoreName][i] = scoreScalars[scoreName]
 
             i+=1
 
-    scoreMeans = np.mean(crossValScores,0)
-    scoreVars = np.var(crossValScores,0)
+    scoreMeans = {}
+    scoreVars = {}
+    for scoreName in CVscoreVectors:
+        scoreMeans[scoreName] = np.mean(CVscoreVectors[scoreName])
+        scoreVars[scoreName] = np.var(CVscoreVectors[scoreName])
 
-    #Z_tilde = np.zeros((n,n))      #For surface plot
-
-    return [scoreMeans,scoreVars]
+    # print("scoreMeans: \n", scoreMeans)
+    # print("scoreVars: \n", scoreVars)
+    return scoreMeans,scoreVars
 
 #===============================================================================
 #===============================================================================
@@ -100,14 +105,18 @@ def crossValidation(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS,skCV,shuffle,
 #===============================================================================
 #===============================================================================
 
-def bootstrap(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS,nBoot): #z is the original data sample and B is the number of bootstrap samples
+def bootstrap(regMeth,emptyScoreScalars,X,sigma,lmd,z,scaling,skOLS,nBoot): #z is the original data sample and B is the number of bootstrap samples
     n = len(z)
     #Scores from each bootstrap cycle will be stored as row vectors in bootScores
-    bootScores = np.zeros((nBoot,len(scoreNames)))
+    #bootScores = np.zeros((nBoot,len(scoreNames)))
+    bootScoreVectors = {}
+    for scoreName in emptyScoreScalars:
+        bootScoreVectors[scoreName] = np.zeros(nBoot)
+
 
     for b in range(0,nBoot):  #Loop through bootstrap cycles
         z_star = np.zeros(n)
-        X_star = np.zeros((n,X.shape[1]))
+        X_star = np.zeros((n,X.shape[1])) #X.shape[1] = (p+2)(p+1)/2 = len(beta)
         #Form a bootstrap sample,z_star, by drawing w. replacement from the original sample
         # zStarIndeces = np.random.randint(0,n,z.shape)
         # z_star = z[zStarIndeces]
@@ -116,13 +125,16 @@ def bootstrap(regMeth,scoreNames,X,sigma,lmd,z,scaling,skOLS,nBoot): #z is the o
             z_star[i] = z[zInd]
             X_star[i,:] = X[zInd,:]
 
-        scoreValues = linReg(regMeth,scoreNames,X_star,sigma,lmd,z_star,scaling,skOLS)[1]
-        for ind,score in enumerate(scoreNames):
-            bootScores[b,ind] = scoreValues[ind]
+        scoreScalars = linReg(regMeth,emptyScoreScalars,X_star,sigma,lmd,z_star,scaling,skOLS)[0]
+        for scoreName in scoreScalars:
+            bootScoreVectors[scoreName][b] = scoreScalars[scoreName]
 
-    scoreMeans = np.mean(bootScores,0)
-    scoreVars = np.var(bootScores,0)
+    scoreMeans = {}
+    scoreVars = {}
 
+    for scoreName in scoreScalars:
+        scoreMeans[scoreName] = np.mean(bootScoreVectors[scoreName])
+        scoreVars[scoreName] = np.var(bootScoreVectors[scoreName])
 
 
     return scoreMeans,scoreVars

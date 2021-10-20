@@ -48,8 +48,8 @@ def doRegression(resampMeth,regMeth,emptyScoreScalars,hyperPars):
     # The results for each score is stored as matrix with dimensionality
     #(nLambdas,nOrders,nSigmas)
     scoreMatrices = {}
-    for score in emptyScoreScalars:
-        scoreMatrices[score] = np.zeros((nLambdas,nOrders,nSigmas))
+    for scoreName in emptyScoreScalars:
+        scoreMatrices[scoreName] = np.zeros((nLambdas,nOrders,nSigmas))
     #e.g.
     # calcRes =\
     # {'bias':        np.zeros((nLambdas,nOrders,nSigmas))\
@@ -88,7 +88,7 @@ def doRegression(resampMeth,regMeth,emptyScoreScalars,hyperPars):
 
                 # for i,scoreName in enumerate(scoreNames):
                 #     print(scoreName)
-                #     scoreRes[scoreName][l,o,s]=scoreValues[i]
+                #     scoreMatrices[scoreName][l,o,s]=scoreValues[i]
     #================================================================================================
     #================================================================================================
     # print("scoreScalars from doRegression: ", scoreScalars)

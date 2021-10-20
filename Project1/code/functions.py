@@ -157,53 +157,34 @@ def R2(y_data, y_model):
 
 
 
-def getTheScore(score,z_test,f_test,z_train,z_predict,z_tilde):
-    scoreVal = 0
-
-    Ez = np.mean(z_tilde)
-    if(score == "bias"):
-        scoreVal = getMSE(z_test, Ez)
-    if(score == "variance"):
-        scoreVal = getMSE(z_predict, Ez)
-    if(score == "MSEtest"):
-        scoreVal = getMSE(z_test, z_predict)
-        print("MSEtest: ", scoreVal)
-    if(score == "MSEtrain"):
-        scoreVal = getMSE(z_train, z_tilde)
-        print("MSEtrain: ", scoreVal)
-    if(score == "R2test"):
-        scoreVal = getR2(z_test, z_predict)
-    if(score == "R2train"):
-        scoreVal = getR2(z_train, z_tilde)
-
-    print("scoreVal: ",scoreVal)
-
-
-    return scoreVal
-
-
     # if(score == "covariance"):
     #     scoreVal = np.cov(f_test.reshape(1,-1),z_predict.reshape(1,-1))[0,1]
  # getScores(scoreNames,z_test,f_test,z_train,z_predict,z_tilde)
+def getTheScore(scoreName,z_test,f_test,z_train,z_predict,z_tilde):
+    scoreVal = 0
+    Ez = np.mean(z_tilde)
+    if(scoreName == "bias"):
+        scoreVal = getMSE(z_test, Ez)
+    if(scoreName == "variance"):
+        scoreVal = getMSE(z_predict, Ez)
+    if(scoreName == "MSEtest"):
+        scoreVal = getMSE(z_test, z_predict)
+    if(scoreName == "MSEtrain"):
+        scoreVal = getMSE(z_train, z_tilde)
+    if(scoreName == "R2test"):
+        scoreVal = getR2(z_test, z_predict)
+    if(scoreName == "R2train"):
+        scoreVal = getR2(z_train, z_tilde)
+    return scoreVal
+
+
 def getScores(emptyScoreScalars,z_test,f_test,z_train,z_predict,z_tilde):
-    #Ensures the scorevalues are always placed in the same order regardless of their order in scoreNames
-    # dummyList = ["bias","variance","MSEtest", "MSEtrain", "R2test", "R2train"]
-    # scoreValues = [0]*len(dummyList)
-    #For reference:
-    # scoreValues={"bias":0,"variance":0, "MSEtest": 0, "MSEtrain": 0, "R2test": 0, "R2train":0}
 
     for scoreName in emptyScoreScalars:
         emptyScoreScalars[scoreName] = getTheScore(scoreName,z_test,f_test,z_train,z_predict,z_tilde)
-
+        
     return emptyScoreScalars  #Not empty anymore, but this way we don't have to create a new list, reducing computational cost?
 
-    # for score in scoreNames:
-    #     if(score in dummyList):
-    #         scoreInd = dummyList.index(score)
-    #         print(scoreInd)
-    #         scoreValues[scoreInd] = getTheScore(score,z_test,f_test,z_train,z_predict,z_tilde)
-    # print(scoreValues)
-    # return scoreValues
 
 
 
