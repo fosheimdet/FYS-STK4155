@@ -8,8 +8,8 @@ run_exercises.py reproduces the results from a specified exercise and task.
 
 To in order to run, main.py and run_exercises.py need to be in the same directory as:
 
-plotters.py
-reformat_variables.py
-perform_regressions.py
-resampling_methods.py
+plotters.py, 
+reformat_variables.py, 
+perform_regressions.py, 
+resampling_methods.py, and
 functions.py
