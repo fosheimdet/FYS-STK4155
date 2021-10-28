@@ -17,7 +17,7 @@ def reformatVariables(\
     ,sigma_v,sigma_s\
     ,minOrder,maxOrder,order_s\
     ,minLoglmd, maxLoglmd, lambda_s\
-    ,sigmasBool,plotTypeInt,origSurfPlot,savePlot\
+    ,sigmasBool,plotTypeInt,savePlot\
     ,resampInt,regInt,emptyScoreScalars\
     ,nBoot,K,shuffle):
 

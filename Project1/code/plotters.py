@@ -111,9 +111,7 @@ def scorePlotter(calcRes,calcAtts,terrainBool,tinkerBool,exercise,savePlot):
     #====================================================================================
     #====== Use the found scores to generate a plot for this iteration of sigma =========
     #====================================================================================
-    print(nLambdas)
-    print(nOrders)
-    print(nSigmas)
+
     for s,sigma in enumerate(sigmas):
         heatMapTitle,normPlotTitle, heatMapFilename,normPlotFilename = \
         titleMaker(terrainBool,sigma,regMeth,resampMeth,nBoot,K,n,lambdas,orders)
@@ -450,7 +448,7 @@ def beta_CI(tinkerBool,savePlot,beta_hat,var_beta,alpha,order):
         orderStr = 'nd'
     elif(order==3):
         orderStr = 'rd'
-    plt.title(f"Regression coefficients with their 95% CI for {order}"+orderStr+ " order pol.")
+    plt.title(f"Regression coefficients with their {(1-alpha)*100}% CI for {order}"+orderStr+ " order pol.")
     # Show the minor grid lines with very faint and almost transparent grey lines
     plt.minorticks_on()
     plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.3)

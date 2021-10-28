@@ -56,7 +56,6 @@ terrainBool = False  #Use terrain data or Franke function?
 n_t = 1000            #How many points on the x and y axes if using terrain data
 n_f = 40             #How many points on the x and y axes if using FrankeFunction
 
-origSurf = False #Plot original data w. no noise before doing regression? Will be set to False for terrain data
 showResults  = True #Plot results based on plotTypeInt?
 doublePlot = True   #Plot the data side by side with the fitted surface?
 plotOrig = False     #Plot the data or the fit if doublePlot is False? I.e. terrain or noisy Franke.
@@ -96,7 +95,6 @@ plotTypeInt =              0
               # [  True    1   False  ]  Plots error vs. pol.deg.
               # [  False   2   True   ]  Plots error vs. lambda
               # [  True    3   True   ]  Produces heatmap(s) of error(s)
-# origSurfPlot = True #Plot original data w. no noise before doing regression? Will be set to False for terrain data
 # showResults  = False #Plot results based on plotTypeInt?
 # savePlot = True #Save plots?
 #---------------------------------------------------------------------------
@@ -158,7 +156,6 @@ if(exercise == 1):
         dummyList = ['bias','variance','MSEtest','MSEtrain','R2test','R2train']
         #              0        1          2          3         4        5
         emptyScoreScalars=getScores(0,1,2,3,4,5)
-        origSurf = True #Plot original data w. no noise before doing regression? Will be set to False for terrain data
         showResults  = True #Plot results based on plotTypeInt?
         doublePlot = True   #Plot the data side by side with the fitted surface?
         plotOrig = True     #Plot the data or the fit if doublePlot is False? I.e. terrain or noisy Franke.
@@ -170,7 +167,7 @@ if(exercise == 1):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             if(ONbutton):
                 print('Performing regression and calculating scores\n')
                 t_start = time.time()
@@ -182,7 +179,6 @@ if(exercise == 1):
 
     if(task==2 or task == 0):
         print("-------------------------------   task 2  ---------------------------------------")
-        #origSurfPlot = False #Plot original data w. no noise before doing regression? Will be set to False for terrain data
         showResults  = True #Plot results based on plotTypeInt?
         doublePlot = True   #Plot the data side by side with the fitted surface?
         plotOrig = False     #Plot the data or the fit if doublePlot is False? I.e. terrain or noisy Franke.
@@ -205,7 +201,7 @@ if(exercise == 1):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -263,7 +259,7 @@ if(exercise == 1):
         print('Reformatting variables\n')
         n = n_t if terrainBool else n_f
         if(terrainBool):sigmasBool = False
-        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
         print('Performing regression and calculating scores\n')
         t_start = time.time()
         scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -280,7 +276,6 @@ terrainBool = False  #Use terrain data or Franke function?
 n_t = 1000            #How many points on the x and y axes if using terrain data
 n_f = 40             #How many points on the x and y axes if using FrankeFunction
 
-origSurf = False #Plot original data w. no noise before doing regression? Will be set to False for terrain data
 showResults  = True #Plot results based on plotTypeInt?
 doublePlot = True   #Plot the data side by side with the fitted surface?
 plotOrig = True     #Plot the data or the fit if doublePlot is False? I.e. terrain or noisy Franke.
@@ -333,18 +328,17 @@ if(exercise==2):
         print("-------------------------------   task 1  ---------------------------------------")
         emptyScoreScalars=getScores(3,2)
         n_v = [10,20,40,80]
-        n_v=[5,10]
         for n_f in n_v:
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
             t_end = time.time()
             print('performRegressions() time used: ', t_end-t_start,'sec\n')
-        plotResults (scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta,hyperPars,resampMeth,showResults)
+            plotResults (scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta,hyperPars,resampMeth,showResults)
         if(displayPlots):plt.show()
     if(task == 2 or task==0):
         print("-------------------------------   task 2  ---------------------------------------")
@@ -357,7 +351,7 @@ if(exercise==2):
         print('Reformatting variables\n')
         n = n_t if terrainBool else n_f
         if(terrainBool):sigmasBool = False
-        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
         print('Performing regression and calculating scores\n')
         t_start = time.time()
         scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -390,14 +384,14 @@ if(exercise==3 or exercise==42):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
             t_end = time.time()
             print('performRegressions() time used: ', t_end-t_start,'sec\n')
             plotResults (scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta,hyperPars,resampMeth,showResults)
-            if(displayPlots):plt.show()
+        if(displayPlots):plt.show()
             #===============================================================================
     if(task==2 or task == 0):
         print("-------------------------------   task 2  ---------------------------------------")
@@ -411,20 +405,19 @@ if(exercise==3 or exercise==42):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
             t_end = time.time()
             print('performRegressions() time used: ', t_end-t_start,'sec\n')
             plotResults (scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta,hyperPars,resampMeth,showResults)
-            if(displayPlots):plt.show()
+        if(displayPlots):plt.show()
             #===============================================================================
 
 #-----------------------------------  CONTROL PANEL ---------------------------------------------------------------------------------------------
 
 n_f = 40             #How many points on the x and y axes if using FrankeFunction
-origSurf = False #Plot original data w. no noise before doing regression? Will be set to False for terrain data
 showResults  = True #Plot results based on plotTypeInt?
 doublePlot = True   #Plot the data side by side with the fitted surface?
 plotOrig = True     #Plot the data or the fit if doublePlot is False? I.e. terrain or noisy Franke.
@@ -489,7 +482,7 @@ if(exercise==4 or exercise==42):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -509,7 +502,7 @@ if(exercise==4 or exercise==42):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -530,7 +523,7 @@ if(exercise==4 or exercise==42):
         print('Reformatting variables\n')
         n = n_t if terrainBool else n_f
         if(terrainBool):sigmasBool = False
-        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
         print('Performing regression and calculating scores\n')
         t_start = time.time()
         scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -549,7 +542,7 @@ if(exercise==4 or exercise==42):
         print('Reformatting variables\n')
         n = n_t if terrainBool else n_f
         if(terrainBool):sigmasBool = False
-        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
         print('Performing regression and calculating scores\n')
         t_start = time.time()
         scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -569,7 +562,7 @@ if(exercise==4 or exercise==42):
         print('Reformatting variables\n')
         n = n_t if terrainBool else n_f
         if(terrainBool):sigmasBool = False
-        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
         print('Performing regression and calculating scores\n')
         t_start = time.time()
         scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -593,7 +586,7 @@ if(exercise==4 or exercise==42):
         print('Reformatting variables\n')
         n = n_t if terrainBool else n_f
         if(terrainBool):sigmasBool = False
-        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
         print('Performing regression and calculating scores\n')
         t_start = time.time()
         scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -628,7 +621,7 @@ if(exercise==5 or exercise==42):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -648,7 +641,7 @@ if(exercise==5 or exercise==42):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -667,7 +660,7 @@ if(exercise==5 or exercise==42):
         print('Reformatting variables\n')
         n = n_t if terrainBool else n_f
         if(terrainBool):sigmasBool = False
-        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
         print('Performing regression and calculating scores\n')
         t_start = time.time()
         scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -683,7 +676,7 @@ if(exercise==5 or exercise==42):
         print('Reformatting variables\n')
         n = n_t if terrainBool else n_f
         if(terrainBool):sigmasBool = False
-        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
         print('Performing regression and calculating scores\n')
         t_start = time.time()
         scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -719,7 +712,7 @@ if(exercise==5 or exercise==42):
         print('Reformatting variables\n')
         n = n_t if terrainBool else n_f
         if(terrainBool):sigmasBool = False
-        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
         print('Performing regression and calculating scores\n')
         t_start = time.time()
         scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -734,7 +727,6 @@ terrainBool = True  #Use terrain data or Franke function?
 n_t = 50            #How many points on the x and y axes if using terrain data
 n_f = 40             #How many points on the x and y axes if using FrankeFunction
 
-origSurfPlot = False #Plot original data w. no noise before doing regression? Will be set to False for terrain data
 showResults  = True #Plot results based on plotTypeInt?
 doublePlot = True   #Plot the data side by side with the fitted surface?
 plotOrig = True     #Plot the data or the fit if doublePlot is False? I.e. terrain or noisy Franke.
@@ -780,8 +772,7 @@ shuffle = True      #Shuffle the data before performing crossval folds?
 #------------------------------------------------------------------------------------------------------------------------------------------------
 #================================================================================================================================================
 
-print("hello")
-print(exercise)
+
 if(exercise==6 or exercise==42):
     print("Task 1:  Surface plot of p=10 fits for all regression models")
     print("Task 2:  MSE vs lambda and R2 vs lambda for all the models")
@@ -807,7 +798,7 @@ if(exercise==6 or exercise==42):
         print('Reformatting variables\n')
         n = n_t if terrainBool else n_f
         if(terrainBool):sigmasBool = False
-        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
         print('Performing regression and calculating scores\n')
         t_start = time.time()
         scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -823,7 +814,7 @@ if(exercise==6 or exercise==42):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -848,7 +839,7 @@ if(exercise==6 or exercise==42):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -863,7 +854,7 @@ if(exercise==6 or exercise==42):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -884,7 +875,7 @@ if(exercise==6 or exercise==42):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -911,7 +902,7 @@ if(exercise==6 or exercise==42):
         print('Reformatting variables\n')
         n = n_t if terrainBool else n_f
         if(terrainBool):sigmasBool = False
-        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+        resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
         print('Performing regression and calculating scores\n')
         t_start = time.time()
         scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)
@@ -934,7 +925,7 @@ if(exercise==6 or exercise==42):
             print('Reformatting variables\n')
             n = n_t if terrainBool else n_f
             if(terrainBool):sigmasBool = False
-            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,origSurf,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
+            resampMeth,regMeth,emptyScoreScalars,hyperPars=reformatVariables(tinkerBool,exercise,terrainBool,n_t,n_f,scaling,skOLS,skCV,plotBetaCI,alpha,sigma_v,sigma_s,minOrder,maxOrder,order_s,minLoglmd, maxLoglmd, lambda_s,sigmasBool,plotTypeInt,savePlot,resampInt,regInt,emptyScoreScalars,nBoot,K,shuffle)
             print('Performing regression and calculating scores\n')
             t_start = time.time()
             scoreMatrices,calcAtts,z_noisyL,z_fittedL,beta_hat,var_beta=performRegressions(resampMeth,regMeth,emptyScoreScalars,hyperPars)

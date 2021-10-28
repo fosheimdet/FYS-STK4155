@@ -38,7 +38,6 @@ def main():
     n_t = 40            #How many points on the x and y axes if using terrain data
     n_f = 40             #How many points on the x and y axes if using FrankeFunction
 
-    origSurfPlot = False #Plot original data w. no noise before doing regression? Will be set to False for terrain data
     showResults  = True #Plot results based on plotTypeInt?
     doublePlot = True   #Plot the data side by side with the fitted surface?
     plotOrig = False     #Plot the data or the fit if doublePlot is False? I.e. terrain or noisy Franke.
@@ -58,10 +57,10 @@ def main():
     sigma_s  =               [2*S]        #Default standard deviation of epsilon
     #------------------------------------------
     minOrder,maxOrder =       2,20        #Will make order vector from minOrder to maxOrder
-    order_s =                 [20]           #Default pol.degree if we don't plot vs. degrees
+    order_s =                 [13]           #Default pol.degree if we don't plot vs. degrees
     #------------------------------------------
     minLoglmd, maxLoglmd =    -7,-2   #Will make log(lambda) vector from minLoglmd to maxLoglmd
-    lambda_s  =               [-6]        #Default lambda value. Must be set
+    lambda_s  =               [-11]        #Default lambda value. Must be set
     #---------------------------------------------------------------------------
     #------------------------ Choose type of plot-------------------------------
     #---------------------------------------------------------------------------
@@ -69,7 +68,7 @@ def main():
     #Will be set to False for terrain data during reformating
 
                   # [ordersBool lamdasBool] = plotTypeInt
-    plotTypeInt =              3
+    plotTypeInt =              0
                   # [  False   0   False  ]  Generate surface plot(s) and print results if using no_resamp.
                   # [  True    1   False  ]  Plots error vs. pol.deg.
                   # [  False   2   True   ]  Plots error vs. lambda
@@ -80,13 +79,13 @@ def main():
     #---------------------------------------------------------------------------
     #Choose resampling technique, regression method and what scores to calculate
     #---------------------------------------------------------------------------
-    resampInt = 1 #0=no_resamp., 1=bootstrap, 2=crossval
-    regInt    = 2 #0=OLS,        1=ridge,     2=lasso
+    resampInt = 0 #0=no_resamp., 1=bootstrap, 2=crossval
+    regInt    = 1 #0=OLS,        1=ridge,     2=lasso
 
     dummyList = ['bias','variance','MSEtest','MSEtrain','R2test','R2train']
     #              0        1          2          3         4        5
     #Sets which scores to calculate by passing in the corresponding indices from allScores.
-    emptyScoreScalars=getScores(2,4)
+    emptyScoreScalars=getScores(0,1,2,3,4,5)
     nBoot =30         #Number of bootstrap samples
     K = 5               #Number of folds in cross validation alg.
     shuffle = True      #Shuffle the data before performing crossval folds?
@@ -125,7 +124,7 @@ def main():
     ,sigma_v,sigma_s\
     ,minOrder,maxOrder,order_s\
     ,minLoglmd, maxLoglmd, lambda_s\
-    ,sigmasBool,plotTypeInt,origSurfPlot,savePlot\
+    ,sigmasBool,plotTypeInt,savePlot\
     ,resampInt,regInt,emptyScoreScalars\
     ,nBoot,K,shuffle)
 
