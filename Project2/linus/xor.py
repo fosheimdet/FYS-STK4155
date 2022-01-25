@@ -22,7 +22,8 @@ x = X[0,:].reshape(2,1)
 W1 = np.random.normal(0,1,(2,2)) #Matrix
 b1 = np.random.normal(0,1,(2,1)) #Column vector
 b2 = np.random.normal(0,1)       #Scalar
-W2 = np.random.normal(0,1,(1,2)) #Row vector
+b2 = np.array([b2])
+W2 = np.random.normal(0,1,2) #Row vector
 
 a0 = x
 a1 = sigm(b1+W1@a0)
@@ -30,18 +31,44 @@ a2 = sigm(b2+W2@a1)
 
 ytilde=a2
 
+print("ytilde: ")
 print(ytilde)
 
 #Backpropagation
 
 
-phi1 = np.insert(a1,0,1,0) #Insert 1 at the beginning of a1
-phi2 = np.insert(a2,0,1,0)
+phi1 = np.insert(a0,0,1,0) #Insert 1 at the beginning of a0
+phi2 = np.insert(a1,0,1,0)
 
 Theta1 = np.concatenate((b1,W1),1)
 Theta2 = np.concatenate((b2,W2),1)
+# print("Theta1: ")
+# print(Theta1)
+# print("Theta2: ")
+# print(Theta2)
+
+print(Theta1.shape)
+
+
+def delCdelTheta1(p,q,ytilde,k):
+    Delta1 = (ytilde-y[k])*derSigm(ytilde)*W2[p]*derSigm(a1[p])*phi1[q]
+    return Delta1
+
+
+eta = 0.1
+
+print("testing:")
+print(ytilde-y[0])
+print(derSigm(ytilde))
+print(W2)
+print(eta*delCdelTheta1(0,1,ytilde,0))
+
+for p in range(0,Theta1.shape[0]):
+    for q in range(0,Theta1.shape[1]):
+        Theta1[p,q] = Theta1[p,q] -eta*delCdelTheta1(p,q,ytilde,0)
+
+print("Theta after: ")
 print(Theta1)
-print(Theta2)
 
 
 
