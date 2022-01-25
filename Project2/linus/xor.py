@@ -41,11 +41,11 @@ phi1 = np.insert(a0,0,1,0) #Insert 1 at the beginning of a0
 phi2 = np.insert(a1,0,1,0)
 
 Theta1 = np.concatenate((b1,W1),1)
-Theta2 = np.concatenate((b2,W2),1)
-# print("Theta1: ")
-# print(Theta1)
-# print("Theta2: ")
-# print(Theta2)
+Theta2 = np.concatenate((b2,W2),0)
+print("Theta1: ")
+print(Theta1)
+print("Theta2: ")
+print(Theta2)
 
 print(Theta1.shape)
 
@@ -54,23 +54,30 @@ def delCdelTheta1(p,q,ytilde,k):
     Delta1 = (ytilde-y[k])*derSigm(ytilde)*W2[p]*derSigm(a1[p])*phi1[q]
     return Delta1
 
+def delCdelTheta2(p,q,ytilde,k):
+    Delta2 = (ytilde-y[k])*derSigm(ytilde)*phi2[q]
+    return Delta2
 
-eta = 0.1
+eta = 10
 
-print("testing:")
-print(ytilde-y[0])
-print(derSigm(ytilde))
-print(W2)
-print(eta*delCdelTheta1(0,1,ytilde,0))
+# print("testing:")
+# print(ytilde-y[0])
+# print(derSigm(ytilde))
+# print(W2)
+# print(eta*delCdelTheta1(0,1,ytilde,0))
 
 for p in range(0,Theta1.shape[0]):
     for q in range(0,Theta1.shape[1]):
         Theta1[p,q] = Theta1[p,q] -eta*delCdelTheta1(p,q,ytilde,0)
 
-print("Theta after: ")
+print("Theta1 after: ")
 print(Theta1)
 
+for q in range(0,Theta2.shape[0]):
+        Theta2[q] = Theta2[q] - eta*delCdelTheta2(p,q,ytilde,0)
 
+print("Theta2 after: ")
+print(Theta2)
 
 def delCdely(ytilde,k):
     return ytilde-y[k]
