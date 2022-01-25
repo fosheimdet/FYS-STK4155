@@ -20,6 +20,7 @@ def delCdelTheta2(p,q,ytilde,k):
 
 
 #Initializing parameters
+np.random.seed(420) #To always get the same results
 W1 = np.random.normal(0,1,(2,2)) #Matrix
 b1 = np.random.normal(0,1,(2,1)) #Column vector
 b2 = np.random.normal(0,1)       #Scalar
@@ -52,14 +53,14 @@ print("Theta2: ")
 print(Theta2)
 
 
-eta = 0.1
+eta = 1
 a0 = np.ones((2,1))
 a1= np.ones((2,1))
 a2 = np.ones(1)
 
 
 
-for i in range(0,10000):
+for i in range(0,5000):
     for k in range(0,X.shape[0]):
         a0 = X[k,:].reshape(2,1)
         a1 = sigm(Theta1[:,0].reshape(2,1)+Theta1[:,1:]@a0)
@@ -109,8 +110,27 @@ a2 = sigm(Theta2[0]+Theta2[1:]@a1)
 ytilde = a2
 print("ytilde: ", ytilde)
 
+a0 = X[3,:].reshape(2,1)
+a1 = sigm(Theta1[:,0].reshape(2,1)+Theta1[:,1:]@a0)
+a2 = sigm(Theta2[0]+Theta2[1:]@a1)
+ytilde = a2
+print("ytilde: ", ytilde)
+
+a0 = X[2,:].reshape(2,1)
+a1 = sigm(Theta1[:,0].reshape(2,1)+Theta1[:,1:]@a0)
+a2 = sigm(Theta2[0]+Theta2[1:]@a1)
+ytilde = a2
+print("ytilde: ", ytilde)
+
+a0 = X[0,:].reshape(2,1)
+a1 = sigm(Theta1[:,0].reshape(2,1)+Theta1[:,1:]@a0)
+a2 = sigm(Theta2[0]+Theta2[1:]@a1)
+ytilde = a2
+print("ytilde: ", ytilde)
 
 
+Theta1 = 0
+Theta2 = 0
 #
 #
 # for p in range(0,Theta1.shape[0]):
