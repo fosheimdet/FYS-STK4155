@@ -10,13 +10,36 @@ def sigm(k):
 def derSigm(a):
     return a-a*a
 
+def relu(k):
+    if(k.shape[0]<2):
+        if(k<0):
+            return 0
+        elif(k>=0):
+            return k
+    elif(k.shape[0]>=2):
+        kp = np.zeros(k.shape)
+        for i in range(0,k.shape[0]):
+            if (k[i]<0):
+                kp[i] = 0
+            elif(k[i]>=0):
+                kp[i] = k[i]
+        return kp
+
+def derRelu(a):
+    if(a<=0):
+        return 0
+    elif(a>0):
+        return 1
+
+
+
 
 def delCdelTheta1(p,q,ytilde,k,n3,n2):
     Delta1 = 0
     for three in range(0,n3):
         for two in range(0,n2):
             # Delta1 = Delta1 + (ytilde-y[k])*derSigm(ytilde)*W3[three,two]*derSigm(a2[two])*W2[two,p]*derSigm(a1[p])*phi1[q]
-             Delta1 = Delta1 + (ytilde-y[k])*derSigm(ytilde)*W3[two]*derSigm(a2[two])*W2[two,p]*derSigm(a1[p])*phi1[q]
+             Delta1 = Delta1 + (ytilde-y[k])*derSigm(ytilde)*Theta3[two]*derSigm(a2[two])*Theta2[:,1:][two][p]*derSigm(a1[p])*phi1[q]
     return Delta1
 
 def delCdelTheta2(p,q,ytilde,k):
@@ -67,7 +90,7 @@ print("Theta2: ")
 print(Theta2)
 
 
-eta = 10
+eta = 0.1
 a0 = np.ones((2,1))
 a1= np.ones((2,1))
 a2 = np.ones((2,1))
@@ -75,7 +98,7 @@ a3 = np.ones(1)
 
 
 
-for i in range(0,5000):  #Epochs
+for i in range(0,10000):  #Epochs
     for k in range(0,X.shape[0]):  #Iterate over training data
         #FeedForward
         a0 = X[k,:].reshape(2,1)
@@ -93,8 +116,8 @@ for i in range(0,5000):  #Epochs
         #Adjusting parameters
         for p in range(0,Theta1.shape[0]):
             for q in range(0,Theta1.shape[1]):
-                Theta1[p,q] = Theta1[p,q] -eta*delCdelTheta1(p,q,ytilde,k, a3.shape[0], a2.shape[0])
-
+                Theta1[p,q] = Theta1[p,q] -eta*delCdelTheta1(p,q,ytilde,k, 1, a2.shape[0])
+                #print("del2:" ,eta*delCdelTheta1(p,q,ytilde,k, a3.shape[0], a2.shape[0]))
 
         for p in range(0,Theta2.shape[0]):
             for q in range(0,Theta2.shape[1]):

@@ -59,9 +59,12 @@ a1= np.ones((2,1))
 a2 = np.ones(1)
 
 
-
+# b3 = np.array([b2])
 for i in range(0,5000):
     for k in range(0,X.shape[0]):
+
+        #------------------------------------------------------------
+        #----------------------Feed-forward--------------------------
         a0 = X[k,:].reshape(2,1)
         a1 = sigm(Theta1[:,0].reshape(2,1)+Theta1[:,1:]@a0)
         a2 = sigm(Theta2[0]+Theta2[1:]@a1)
@@ -71,20 +74,20 @@ for i in range(0,5000):
         phi1 = np.insert(a0,0,1,0) #Insert 1 at the beginning of a0
         phi2 = np.insert(a1,0,1,0)
 
-
+        #------------------------------------------------------------
+        #----------------------back-propagation----------------------
         #Adjusting parameters
         for p in range(0,Theta1.shape[0]):
             for q in range(0,Theta1.shape[1]):
                 Theta1[p,q] = Theta1[p,q] -eta*delCdelTheta1(p,q,ytilde,k)
 
-        # print("Theta1 after: ")
-        # print(Theta1)
 
         for q in range(0,Theta2.shape[0]):
                 Theta2[q] = Theta2[q] - eta*delCdelTheta2(p,q,ytilde,k)
+        #------------------------------------------------------------
 
-        # print("Theta2 after: ")
-        # print(Theta2)
+#------------------------------------------------------------
+#---------------testing the network--------------------------
 
 a0 = X[0,:].reshape(2,1)
 a1 = sigm(Theta1[:,0].reshape(2,1)+Theta1[:,1:]@a0)
@@ -123,6 +126,12 @@ ytilde = a2
 print("ytilde: ", ytilde)
 
 a0 = X[0,:].reshape(2,1)
+a1 = sigm(Theta1[:,0].reshape(2,1)+Theta1[:,1:]@a0)
+a2 = sigm(Theta2[0]+Theta2[1:]@a1)
+ytilde = a2
+print("ytilde: ", ytilde)
+
+a0 = X[1,:].reshape(2,1)
 a1 = sigm(Theta1[:,0].reshape(2,1)+Theta1[:,1:]@a0)
 a2 = sigm(Theta2[0]+Theta2[1:]@a1)
 ytilde = a2
