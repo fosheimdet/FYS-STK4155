@@ -6,7 +6,6 @@ def shuffle_in_unison(X,z):
     p = np.random.permutation(len(z))
     return X[p], z[p]
 
-
 def FrankeFunction(x,y):
     term1 = 0.75*np.exp(-(0.25*(9*x-2)**2) - 0.25*((9*y-2)**2))
     term2 = 0.75*np.exp(-((9*x+1)**2)/49.0 - 0.1*(9*y+1))
