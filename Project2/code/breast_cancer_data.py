@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import tensorflow as tf
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Sequential      #This allows appending layers to existing models
@@ -8,9 +9,12 @@ from tensorflow.keras import optimizers             #This allows using whichever
 from tensorflow.keras import regularizers           #This allows using whichever regularizer we want (l1,l2,l1_l2)
 from tensorflow.keras.utils import to_categorical   #This allows using categorical cross entropy as the cost function
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from sklearn.datasets import load_breast_cancer
+from sklearn.neural_network import MLPClassifier
 
 from neural_network import FFNN, FFNN2
+from functions import scale_data, accuracy
 from activation_functions import noActL, tanhL, sigmoidL,reluL,softmaxL, derCrossEntropy, derMSE
 
 def accuracy_score(y_pred, y_test):
@@ -25,21 +29,6 @@ def to_categorical_numpy(integer_vector):
 
     return onehot_vector
 
-
-def accuracy(output, targets, vertical):  #Assumes output to be softmax vector and targets one-hot-encoded
-    score = 0
-    if(vertical): #If data samples are stacked vertically
-        n_data = output.shape[0]
-        for i in range(n_data):
-            if(np.argmax(output[i,:]) == np.argmax(targets[i,:])):
-                score+=1
-    else:
-        n_data = output.shape[1]
-        for i in range(n_data):
-            if(np.argmax(output[:,i]) == np.argmax(targets[:,i])):
-                score+=1
-
-    return score/n_data
 
 
 
@@ -60,155 +49,168 @@ print("inputs =  " + str(inputs.shape))
 print("outputs =  " + str(outputs.shape))
 print("labels =  "+ str(labels.shape))
 
-x=inputs      #Reassign the Feature and Label matrices to other variables
+X=inputs      #Reassign the Feature and Label matrices to other variables
 y=outputs
 
 
 
-# Visualisation of dataset (for correlation analysis)
-#
-# plt.figure()
-# plt.scatter(x[:,0],x[:,2],s=40,c=y,cmap=plt.cm.Spectral)
-# plt.xlabel('Mean radius',fontweight='bold')
-# plt.ylabel('Mean perimeter',fontweight='bold')
-# plt.show()
-#
-# plt.figure()
-# plt.scatter(x[:,5],x[:,6],s=40,c=y, cmap=plt.cm.Spectral)
-# plt.xlabel('Mean compactness',fontweight='bold')
-# plt.ylabel('Mean concavity',fontweight='bold')
-# plt.show()
-#
-#
-# plt.figure()
-# plt.scatter(x[:,0],x[:,1],s=40,c=y,cmap=plt.cm.Spectral)
-# plt.xlabel('Mean radius',fontweight='bold')
-# plt.ylabel('Mean texture',fontweight='bold')
-# plt.show()
-#
-# plt.figure()
-# plt.scatter(x[:,2],x[:,1],s=40,c=y,cmap=plt.cm.Spectral)
-# plt.xlabel('Mean perimeter',fontweight='bold')
-# plt.ylabel('Mean compactness',fontweight='bold')
-# plt.show()
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2)
 
 
-#Select features relevant to classification (texture,perimeter,compactness and symmetery)
-#and add to input matrix
+X_train, X_test = scale_data(X_train,X_test)
 
-temp1=np.reshape(x[:,1],(len(x[:,1]),1))
-temp2=np.reshape(x[:,2],(len(x[:,2]),1))
-X=np.hstack((temp1,temp2))
-temp=np.reshape(x[:,5],(len(x[:,5]),1))
-X=np.hstack((X,temp))
-temp=np.reshape(x[:,8],(len(x[:,8]),1))
-X=np.hstack((X,temp))
 
-X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.1)
 
 
 y_train=to_categorical(y_train)     #Convert labels to categorical when using categorical cross entropy
 y_test=to_categorical(y_test)
 
-del temp1,temp2,temp
 
-# %%
+# del temp1,temp2,temp
 
 # Define tunable parameters"
 
-eta=np.logspace(-3,-1,3)                    #Define vector of learning rates (parameter to SGD optimiser)
-lmbda=0.0                               #Define hyperparameter
-n_layers=2                                  #Define number of hidden layers in the model
-n_neuron=np.logspace(0,3,4,dtype=int)       #Define number of neurons per layer
-n_neuron = [2,10,20,30]
-epochs=100                                   #Number of reiterations over the input data
-batch_size=100                              #Number of samples per gradient update
+
+# eta_vals=np.logspace(-3,-1,3)                    #Define vector of learning rates (parameter to SGD optimiser)
+# lmbd=0.0                               #Define hyperparameter
+# n_layers=2                                  #Define number of hidden layers in the model
+# n_neuron=np.logspace(0,3,4,dtype=int)       #Define number of neurons per layer
+# n_neuron = [2,10,20,30]
+# epochs=100                                   #Number of reiterations over the input data
+# M=10                              #Number of samples per gradient update
+
+#Number of neurons in the hidden layers
+lengths_h = [50,50]
+
+epoch_vals= [20,50,80,100,150,200,250,300]
+M_vals = [5,10,20,30,50,80,100,150]
+eta_vals = np.logspace(-5, 1, 7)
+lmbd_vals = np.logspace(-5, 1, 7)
+
+epochs = 100
+M = 20
+eta = 0.1
+lmbd = 1
+hyperparams = [epochs,M,eta,lmbd]
+
+sklearnBool = False
+
+valList = [epoch_vals, M_vals, eta_vals, lmbd_vals]  #List containing values we want to loop over
+
+iterableStr = ['epochs','batch size','eta','lambda']
+            #       0        1         2       3
+
+itIndices=[2,3] #Pick which variables to iterate over
+
+
+iterable1 = valList[itIndices[0]]
+iterable2 = valList[itIndices[1]]
 
 
 
-# n0 = X_train.shape[1] #Number of input nodes
-# nhidden = int(input("Please enter the number of hidden layers \n"))
-# lengths = [n0]
-# for i in range(nhidden):
-#     lengths.append(int(input(f"Please state the number of neurons in layer {i+1} \n")))
-# nL = 10         #Number of output nodes
-# lengths.append(nL)
+train_accuracies=np.zeros((len(iterable1),len(iterable2)))      #Define matrices to store accuracy scores as a function
+test_accuracies=np.zeros((len(iterable1),len(iterable2)))       #of learning rate and number of hidden neurons for
 
 
-Train_accuracy=np.zeros((len(n_neuron),len(eta)))      #Define matrices to store accuracy scores as a function
-Test_accuracy=np.zeros((len(n_neuron),len(eta)))       #of learning rate and number of hidden neurons for
+train_accuracies_sk=np.zeros((len(iterable1),len(iterable2)))
+test_accuracies_sk=np.zeros((len(iterable1),len(iterable2)))
+
+# def NN_architecture(n_features,n_categories,n_neuron):
+#     lengths = [n_features]
+#     for i in range(n_layers):
+#         lengths.append(n_neuron[i])
+#     lengths.append(n_categories)
+#     return lengths
 
 
-Train_accuracy2=np.zeros((len(n_neuron),len(eta)))
-Test_accuracy2=np.zeros((len(n_neuron),len(eta)))
+for i, it1 in enumerate(iterable1):     #run loops over hidden neurons and learning rates to calculate
+    for j, it2 in enumerate(iterable2):      #accuracy scores
+        # lengths = NN_architecture(X.shape[1],2,n_neuron)
+        hyperparams[itIndices[0]] = it1
+        hyperparams[itIndices[1]] = it2
 
 
-for i in range(len(n_neuron)):     #run loops over hidden neurons and learning rates to calculate
-    for j in range(len(eta)):      #accuracy scores
-        lengths = [X_train.shape[1]]
-        for i in range(n_layers):
-            lengths.append(n_neuron[i])
-        lengths.append(2)
-        hyperparams = [epochs,batch_size,eta[j],lmbda]
-
-        MLP=FFNN(X_train.T,y_train.T,n_layers, lengths, reluL, softmaxL, derCrossEntropy, True, hyperparams)
+        MLP=FFNN(X_train,y_train,lengths_h, sigmoidL, softmaxL, derCrossEntropy, True, hyperparams)
         MLP.initializeNetwork()
         MLP.train()
-        output_train, output_test = MLP.feedForward(X_train.T), MLP.feedForward(X_test.T)
-        acc_train, acc_test = accuracy(output_train.T, y_train.T, False), accuracy(output_test.T, y_test.T, False)
-        Train_accuracy[i,j] = acc_train
-        Test_accuracy[i,j] = acc_test
+        output_train, output_test = MLP.predict(X_train), MLP.predict(X_test)
+        acc_train, acc_test = accuracy(output_train, y_train), accuracy(output_test, y_test)
+        train_accuracies[i,j] = acc_train
+        test_accuracies[i,j] = acc_test
 
-        MLP2=FFNN2(X_train,y_train,n_layers, lengths, reluL, softmaxL, derCrossEntropy, True, hyperparams)
-        MLP2.initializeNetwork()
-        MLP2.train()
-        output_train, output_test = MLP2.feedForward(X_train), MLP2.feedForward(X_test)
-        acc_train, acc_test = accuracy(output_train, y_train, True), accuracy(output_test, y_test, True)
-        Train_accuracy2[i,j] = acc_train
-        Test_accuracy2[i,j] = acc_test
-
-
-
-def plot_data(x,y,data,title=None):
-
-    # plot results
-    fontsize=16
+        if(sklearnBool):
+        #Using sklearn's NN
+            MLP_sklearn = MLPClassifier(hidden_layer_sizes = lengths_h, activation = 'logistic', solver = 'sgd',
+            alpha = lmbd, batch_size = M, learning_rate_init = eta, max_iter = epochs, momentum = 0)
+            MLP_sklearn.fit(X_train,y_train)
+            output_train_sk, output_test_sk = MLP_sklearn.predict(X_train), MLP_sklearn.predict(X_test)
+            acc_train_sk, acc_test_sk = accuracy(output_train_sk, y_train), accuracy(output_test_sk, y_test)
+            train_accuracies_sk[i,j] = acc_train_sk
+            test_accuracies_sk[i,j] = acc_test_sk
 
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.matshow(data, interpolation='nearest', vmin=0, vmax=1)
 
-    cbar=fig.colorbar(cax)
-    cbar.ax.set_ylabel('accuracy (%)',rotation=90,fontsize=fontsize)
-    cbar.set_ticks([0,.2,.4,0.6,0.8,1.0])
-    cbar.set_ticklabels(['0%','20%','40%','60%','80%','100%'])
+def plot_data(data, x, y, title):
+    fig, ax = plt.subplots(figsize = (10, 10))
+    sns.heatmap(100*data,xticklabels = x, yticklabels =y , annot=True, ax=ax, cmap="rocket", fmt = '.1f',cbar_kws={'format': '%.0f%%'})
+    # cbar = ax.collections[0].colorbar
+    # cbar.set_ticks([0, 20, 40, 60, 80, 100])
+    # cbar.set_ticklabels(['0%', '20%', '40%', '60%', '80%', '100%'])
+    ax.set_title(title)
+    ax.set_xlabel(iterableStr[itIndices[1]])
+    ax.set_ylabel(iterableStr[itIndices[0]])
 
-    # put text on matrix elements
-    for i, x_val in enumerate(np.arange(len(x))):
-        for j, y_val in enumerate(np.arange(len(y))):
-            c = "${0:.1f}\\%$".format( 100*data[j,i])
-            ax.text(x_val, y_val, c, va='center', ha='center')
+indices = [x for x in range(len(valList))]
+indices.remove(itIndices[0])
+indices.remove(itIndices[1])
 
-    # convert axis vaues to to string labels
-    x=[str(i) for i in x]
-    y=[str(i) for i in y]
+plot_data(train_accuracies, iterable1, iterable2, f"Cancer Data Training Accuracy(%) \n {iterableStr[indices[0]]}={hyperparams[indices[0]]},\
+ {iterableStr[indices[1]]}={hyperparams[indices[1]]}, hidden layers={lengths_h}")
+plot_data(test_accuracies, iterable1, iterable2, f"Cancer Data Test Accuracy(%) \n {iterableStr[indices[0]]}={hyperparams[indices[0]]}, \
+ {iterableStr[indices[1]]}={hyperparams[indices[1]]}, hidden layers={lengths_h}")
 
+plt.show()
 
-    ax.set_xticklabels(['']+x)
-    ax.set_yticklabels(['']+y)
-
-    ax.set_xlabel('$\\mathrm{learning\\ rate}$',fontsize=fontsize)
-    ax.set_ylabel('$\\mathrm{hidden\\ neurons}$',fontsize=fontsize)
-    if title is not None:
-        ax.set_title(title)
-
-    plt.tight_layout()
-
-    plt.show()
-
-plot_data(eta,n_neuron,Train_accuracy, 'training')
-plot_data(eta,n_neuron,Test_accuracy, 'testing')
-
-plot_data(eta,n_neuron,Train_accuracy2, 'training2')
-plot_data(eta,n_neuron,Test_accuracy2, 'testing2')
+#
+# def plot_data(x,y,data,title=None):
+#     # plot results
+#     fontsize=16
+#
+#     fig = plt.figure()
+#     ax = fig.add_subplot(111)
+#     cax = ax.matshow(data, interpolation='nearest', vmin=0, vmax=1)
+#
+#     cbar=fig.colorbar(cax)
+#     cbar.ax.set_ylabel('accuracy (%)',rotation=90,fontsize=fontsize)
+#     cbar.set_ticks([0,.2,.4,0.6,0.8,1.0])
+#     cbar.set_ticklabels(['0%','20%','40%','60%','80%','100%'])
+#
+#     # put text on matrix elements
+#     for i, x_val in enumerate(np.arange(len(x))):
+#         for j, y_val in enumerate(np.arange(len(y))):
+#             c = "${0:.1f}\\%$".format( 100*data[j,i])
+#             ax.text(x_val, y_val, c, va='center', ha='center')
+#
+#     # convert axis vaues to to string labels
+#     x=[str(i) for i in x]
+#     y=[str(i) for i in y]
+#
+#
+#     ax.set_xticklabels(['']+x)
+#     ax.set_yticklabels(['']+y)
+#
+#     ax.set_xlabel(f'{iterableStr[itIndices[0]]}',fontsize=fontsize)
+#     ax.set_ylabel(f'{iterableStr[itIndices[1]]}',fontsize=fontsize)
+#     if title is not None:
+#         ax.set_title(title)
+#
+#     plt.tight_layout()
+#
+#
+#
+# plot_data(iterable1,iterable2,train_accuracies, 'training')
+# plot_data(iterable1,iterable2,test_accuracies, 'testing')
+# if(sklearnBool):
+#     plot_data(iterable1,iterable2,train_accuracies_sk, 'training_sk')
+#     plot_data(iterable1,iterable2,test_accuracies_sk, 'testing_sk')
+# plt.show()
