@@ -1,4 +1,4 @@
-#Project 2
+Project 2
 
 optimizers.py            Script containing various optimization functions used to produce the plots of task a
 neural_network.py        Class containing our neural network
