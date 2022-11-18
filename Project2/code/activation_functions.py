@@ -18,10 +18,10 @@ def derTanh(x):
 tanhL = [tanh,derTanh]
 
 #The Sigmoid function
-def sigm(k):
+def sigm(x):
     # return np.exp(k)/(1+np.exp(k))
     # k = np.clip(k,-500,500)
-    return 1/(1+np.exp(-k))
+    return 1/(1+np.exp(-x))
 
 def derSigm(a):
     return a-a*a
@@ -29,13 +29,13 @@ def derSigm(a):
 sigmoidL = [sigm,derSigm]
 
 #The Relu function
-def relu(k):
-    return np.maximum(0,k) #If k is a vector or a matrix, the elementwise maximum will be taken
+def relu(x):
+    return np.maximum(0,x) #If k is a vector or a matrix, the elementwise maximum will be taken
 
 
-def derRelu(a):
-    return np.heaviside(a,0) #Here the second parameter specifies what to return when the first argument is 0
-
+def derRelu(x):
+    return np.heaviside(x,0) #Here the second parameter specifies what to return when the first argument is 0
+    #return np.where(x <= 0, 0, 1)
 reluL = [relu,derRelu]
 
 #Leaky relu
@@ -64,4 +64,4 @@ def derCrossEntropy(AL,y):
     return -y*(1/AL)
 
 def derMSE(a,y):
-        return (a-y)
+        return 2*(a-y)/y.shape[0]

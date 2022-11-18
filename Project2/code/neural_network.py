@@ -1,5 +1,5 @@
 import numpy as np
-
+from activation_functions import sigmoidL,reluL,leakyReluL, tanhL
 
 
 
@@ -7,20 +7,23 @@ import numpy as np
 #Classical way. X.shape = [n_inputs, n_features]
 #Here the weights are indexed with rows corresponding to the neurons of the previous layer and columns corresponding to nodes of the current layer
 class FFNN:
-    def __init__(self, X, y,lengths_hidden, act_h_list, act_out_list, derCost, softmaxBool,  hyperparams):
+    def __init__(self, X, y, act_out_list, derCost, hyperparams, softmaxBool):
 
+        act_h_dict = {"sigmoid": sigmoidL, "relu": reluL, "leaky relu": leakyReluL, "tanh": tanhL}
+
+        self.epochs,self.batch_size,self.eta,self.lmbd, self.lengths_hidden, self.act_h_str = hyperparams
+        self.act_h_list = act_h_dict[self.act_h_str]
 
         self.X_data_full = X
         self.y_data_full = y
         self.n_inputs = X.shape[0]
         self.n_features = X.shape[1]
         self.n_categories = y.shape[1]
-        # self.nhidden = len(lengths)-2
-        # self.lengths = lengths #a list containing the number of neurons in each layer
-        self.nhidden = len(lengths_hidden)
-        self.lengths = [self.n_features] + lengths_hidden + [self.n_categories] #a list containing the number of neurons in each layer
-        self.epochs,self.batch_size,self.eta,self.lmbd = hyperparams
-        self.act_h, self.derAct_h = act_h_list
+
+        self.nhidden = len(self.lengths_hidden)
+        self.lengths = [self.n_features] + self.lengths_hidden + [self.n_categories] #a list containing the number of neurons in each layer
+
+        self.act_h, self.derAct_h = self.act_h_list
         self.act_out, self.derAct_out = act_out_list
         self.derCost = derCost
         self.softmaxBool = softmaxBool
@@ -37,7 +40,8 @@ class FFNN:
         self.errors_initial.append(np.array([0]))
 
         for i in range(self.nhidden+1):
-            self.W.append(np.random.normal(0,1,(self.lengths[i],self.lengths[i+1])))
+            self.W.append(np.random.normal(0,1,(self.lengths[i],self.lengths[i+1]))) #Draw from standard normal distributin
+            #self.W.append(np.random.rand(self.lengths[i],self.lengths[i+1])) #Draw from a uniform dist. over [0,1)
             self.b.append(np.repeat(0.01,self.lengths[i+1]).reshape(1,-1))
             self.errors_initial.append(np.zeros((self.n_inputs,self.lengths[i+1])))
 
@@ -60,18 +64,7 @@ class FFNN:
     def predict(self,X):
         self.feedForward(X)
 
-        # return self.A[-1]
-
-        #Classifier case
-        # if(self.n_categories>1):
-        #     return np.around(self.A[-1]).astype(int)  #Convert to one-hot encoded values
-        #     # return np.argmax(self.A[-1], axis = 1)
-        # #Regression case
-        # else:
-        #     return self.A[-1]
         return self.A[-1]
-
-
 
 
     def backpropagate(self,y):
@@ -82,13 +75,13 @@ class FFNN:
         if(self.softmaxBool):
             self.errors[-1] = (self.output-y)
         else:
+            #self.errors[-1] = 2*(self.output-y)/y.shape[0]
             self.errors[-1] = self.derAct_out(self.output)*self.derCost(self.output, y)
 
         # self.errors[-1] = deltaL(self.output,y,self.derAct_out,self.derCost)
 
 
         #Finding the remaining errors:
-        #Switch to "for l in reversed(...)?"
         for l in range(self.nhidden, 0, -1):
             self.errors[l] = (self.errors[l+1]@self.W[l+1].T)*self.derAct_h(self.A[l])
 
@@ -118,11 +111,7 @@ class FFNN:
 
 
 
-
-
     def displayNetwork(self,errors=False):
-        # for i in range(len(self.A)):
-        #     print("{}  {}".format(self.A[i].shape, self.errors[i].shape))
 
         print("A: " )
         print("-------------------------------")
@@ -136,344 +125,3 @@ class FFNN:
                 print(self.errors[i].shape)
             print("-------------------------------")
             print("batch_size: ", self.batch_size)
-
-##=======================================================================================================================
-#Here the weights are indexed with rows corresponding to the neurons of the current layer and columns corresponding to nodes of the previous layer
-class FFNN1:
-    def __init__(self, X, y, nhidden, lengths, act_h_list, act_out_list, derCost, softmaxBool,  hyperparams):
-
-
-        self.X_data_full = X
-        self.y_data_full = y
-        self.n_inputs = X.shape[1]
-        self.nhidden = nhidden
-        self.lengths = lengths #a list containing the number of neurons in each layer
-        self.epochs,self.batch_size,self.eta,self.lmbd = hyperparams
-        self.act_h, self.derAct_h = act_h_list
-        self.act_out, self.derAct_out = act_out_list
-        self.derCost = derCost
-        self.softmaxBool = softmaxBool
-
-
-
-    def initializeNetwork(self):
-        self.W = [] #Weights
-        self.b = [] #biases
-        self.errors_initial = []
-
-        self.W.append(np.array([0]))
-        self.b.append(np.array([0]))
-        self.errors_initial.append(np.array([0]))
-
-        for i in range(self.nhidden+1):
-            self.W.append(np.random.normal(0,1,(self.lengths[i+1],self.lengths[i])))
-            self.b.append(np.repeat(0.01,self.lengths[i+1]).reshape(-1,1))
-            self.errors_initial.append(np.zeros((self.lengths[i+1], self.n_inputs)))
-
-    def feedForward(self, X):
-        self.A = [] #Activations
-        #First layer
-        self.A.append(X)
-        #Hidden layers
-        for i in range(self.nhidden):
-            self.A.append(self.act_h(self.W[i+1]@self.A[i] + self.b[i+1]))
-
-        #Output layer
-        AL = self.act_out(self.W[-1]@self.A[-1] + self.b[-1])
-        self.A.append(AL)
-
-        self.output = self.A[-1]
-
-        return AL
-
-
-    def backpropagate(self,y):
-
-        self.errors = self.errors_initial #Reset errors
-
-
-        if(self.softmaxBool):
-            self.errors[-1] = (self.output-y)
-        else:
-            # self.errors[-1] = self.output-y
-            self.errors[-1] = self.derAct_out(self.output)*self.derCost(self.output, y)
-
-        #Finding the remaining errors:
-
-        for l in range(self.nhidden, 0, -1):
-            self.errors[l] = self.derAct_h(self.A[l])*(self.W[l+1].T@self.errors[l+1])
-
-        for l in range(1,self.nhidden+2):
-            self.W[l] = self.W[l] - self.eta*(self.errors[l]@self.A[l-1].T + self.lmbd*self.W[l])
-
-
-            self.b[l] = self.b[l] - self.eta*self.errors[l]@np.ones(self.errors[l].shape[1]).reshape(-1,1)
-
-    def train(self):
-        indices =np.arange(self.n_inputs)
-        np.random.seed(10)
-        for epoch in range(self.epochs):
-            for i in range(int(self.n_inputs/self.batch_size)):
-                batch_indices = np.random.choice(indices, self.batch_size, replace=True)
-                X_batch = self.X_data_full[:,batch_indices]
-                y_batch = self.y_data_full[:,batch_indices]
-                self.feedForward(X_batch)
-                self.backpropagate(y_batch)
-
-
-
-
-    def displayNetwork(self,errors=False):
-        # for i in range(len(self.A)):
-        #     print("{}  {}".format(self.A[i].shape, self.errors[i].shape))
-
-        print("A: " )
-        print("-------------------------------")
-        for i in range(len(self.A)):
-            print(self.A[i].shape)
-        print("-------------------------------")
-        if(errors == True) :
-            print("Errors: " )
-            print("-------------------------------")
-            for i in range(len(self.errors)):
-                print(self.errors[i].shape)
-            print("-------------------------------")
-
-
-
-class FFNN2:
-    def __init__(self, X, y, nhidden, lengths, act_h_list, act_out_list, derCost, softmaxBool,  hyperparams):
-
-
-        self.X_data_full = X.T
-        self.y_data_full = y.T
-        self.n_inputs = X.shape[0]
-        self.nhidden = nhidden
-        self.lengths = lengths #a list containing the number of neurons in each layer
-        self.epochs,self.batch_size,self.eta,self.lmbd = hyperparams
-        self.act_h, self.derAct_h = act_h_list
-        self.act_out, self.derAct_out = act_out_list
-        self.derCost = derCost
-        self.softmaxBool = softmaxBool
-
-
-
-    def initializeNetwork(self):
-        self.W = [] #Weights
-        self.b = [] #biases
-        self.errors_initial = []
-
-        self.W.append(np.array([0]))
-        self.b.append(np.array([0]))
-        self.errors_initial.append(np.array([0]))
-
-        for i in range(self.nhidden+1):
-            self.W.append(np.random.normal(0,1,(self.lengths[i+1],self.lengths[i])))
-            self.b.append(np.repeat(0.01,self.lengths[i+1]).reshape(-1,1))
-            self.errors_initial.append(np.zeros((self.lengths[i+1], self.n_inputs)))
-
-    def feedForward(self, X):
-        self.A = [] #Activations
-        #First layer
-        self.A.append(X.T)
-        #Hidden layers
-        for i in range(self.nhidden):
-            self.A.append(self.act_h(self.W[i+1]@self.A[i] + self.b[i+1]))
-
-        #Output layer
-        AL = self.act_out(self.W[-1]@self.A[-1] + self.b[-1])
-        self.A.append(AL)
-
-        self.output = self.A[-1]
-
-        return AL
-
-
-    def backpropagate(self,y):
-
-        self.errors = self.errors_initial #Reset errors
-
-
-        if(self.softmaxBool):
-            self.errors[-1] = (self.output-y)
-        else:
-            # self.errors[-1] = self.output-y
-            self.errors[-1] = self.derAct_out(self.output)*self.derCost(self.output, y)
-
-
-        #Finding the remaining errors:
-
-        for l in range(self.nhidden, 0, -1):
-            self.errors[l] = self.derAct_h(self.A[l])*(self.W[l+1].T@self.errors[l+1])
-
-        for l in range(1,self.nhidden+2):
-            self.W[l] = self.W[l] - self.eta*(self.errors[l]@self.A[l-1].T + self.lmbd*self.W[l])
-
-
-            self.b[l] = self.b[l] - self.eta*self.errors[l]@np.ones(self.errors[l].shape[1]).reshape(-1,1)
-
-    def train(self):
-        indices =np.arange(self.n_inputs)
-        np.random.seed(10)
-        for epoch in range(self.epochs):
-            for i in range(int(self.n_inputs/self.batch_size)):
-                batch_indices = np.random.choice(indices, self.batch_size, replace=True)
-                X_batch = self.X_data_full[:,batch_indices]
-                y_batch = self.y_data_full[:,batch_indices]
-                self.feedForward(X_batch.T)
-                self.backpropagate(y_batch)
-
-
-
-
-    def displayNetwork(self,errors=False):
-        # for i in range(len(self.A)):
-        #     print("{}  {}".format(self.A[i].shape, self.errors[i].shape))
-
-        print("A: " )
-        print("-------------------------------")
-        for i in range(len(self.A)):
-            print(self.A[i].shape)
-        print("-------------------------------")
-        if(errors == True) :
-            print("Errors: " )
-            print("-------------------------------")
-            for i in range(len(self.errors)):
-                print(self.errors[i].shape)
-            print("-------------------------------")
-
-def deltaL(AL,y, derAct_out, derCost):
-    nL = AL.shape[0]
-    n_input = AL.shape[1]
-    deltaL = np.zeros((nL,n_input))
-    for index in range(n_input):
-        M = np.zeros((nL,nL))
-        for c in range(len(y)):
-            for i in range(len(y)):
-                M[c,i] = derAct_out(i,c,AL[:,index])
-        derC_vec = derCost(AL[:,index], y[:,index])
-        deltaL[:,index] = M@derC_vec
-
-    return deltaL
-
-
-##=======================================================================================================================
-
-
-#
-# class FFNN:
-#     def __init__(self, X, y, nhidden, lengths, act_h_list, act_out_list, derCost, softmaxBool,  hyperparams):
-#
-#
-#         self.X_data_full = X
-#         self.y_data_full = y
-#         self.n_inputs = X.shape[1]
-#         self.nhidden = nhidden
-#         self.lengths = lengths #a list containing the number of neurons in each layer
-#         self.epochs,self.batch_size,self.eta,self.lmbd = hyperparams
-#         self.act_h, self.derAct_h = act_h_list
-#         self.act_out, self.derAct_out = act_out_list
-#         self.derCost = derCost
-#         self.softmaxBool = softmaxBool
-#
-#
-#
-#     def initializeNetwork(self):
-#         self.W = [] #Weights
-#         self.b = [] #biases
-#         self.errors_initial = []
-#
-#         self.W.append(np.array([0]))
-#         self.b.append(np.array([0]))
-#         self.errors_initial.append(np.array([0]))
-#
-#         for i in range(self.nhidden+1):
-#             self.W.append(np.random.normal(0,1,(self.lengths[i+1],self.lengths[i])))
-#             self.b.append(np.repeat(0.01,self.lengths[i+1]).reshape(-1,1))
-#             self.errors_initial.append(np.zeros((self.lengths[i+1], self.n_inputs)))
-#
-#     def feedForward(self, X):
-#         self.A = [] #Activations
-#         #First layer
-#         self.A.append(X)
-#         #Hidden layers
-#         for i in range(self.nhidden):
-#             self.A.append(self.act_h(self.W[i+1]@self.A[i] + self.b[i+1]))    # def predict(self, X, y):
-#
-#         #Output layer
-#         AL = self.act_out(self.W[-1]@self.A[-1] + self.b[-1])
-#         self.A.append(AL)
-#
-#         self.output = self.A[-1]
-#
-#         return AL
-#
-#
-#     def backpropagate(self,y):
-#
-#         self.errors = self.errors_initial #Reset errors
-#
-#
-#         if(self.softmaxBool):
-#             self.errors[-1] = (self.output-y)
-#         else:
-#             # self.errors[-1] = self.output-y
-#             self.errors[-1] = self.derAct_out(self.output)*self.derCost(self.output, y)
-#
-#         # self.errors[-1] = deltaL(self.output,y,self.derAct_out,self.derCost)
-#
-#
-#         #Finding the remaining errors:
-#
-#         for l in range(self.nhidden, 0, -1):
-#             self.errors[l] = self.derAct_h(self.A[l])*(self.W[l+1].T@self.errors[l+1])
-#
-#         for l in range(1,self.nhidden+2):
-#             self.W[l] = self.W[l] - self.eta*(self.errors[l]@self.A[l-1].T + self.lmbd*self.W[l])
-#
-#
-#             self.b[l] = self.b[l] - self.eta*self.errors[l]@np.ones(self.errors[l].shape[1]).reshape(-1,1)
-#
-#     def train(self):
-#         indices =np.arange(self.n_inputs)
-#
-#         for epoch in range(self.epochs):
-#             for i in range(int(self.n_inputs/self.batch_size)):
-#                 batch_indices = np.random.choice(indices, self.batch_size, replace=True)
-#                 X_batch = self.X_data_full[:,batch_indices]
-#                 y_batch = self.y_data_full[:,batch_indices]
-#                 self.feedForward(X_batch)
-#                 self.backpropagate(y_batch)
-#
-#
-#
-#
-#     def displayNetwork(self,errors=False):
-#         # for i in range(len(self.A)):
-#         #     print("{}  {}".format(self.A[i].shape, self.errors[i].shape))
-#
-#         print("A: " )
-#         print("-------------------------------")
-#         for i in range(len(self.A)):
-#             print(self.A[i].shape)
-#         print("-------------------------------")
-#         if(errors == True) :
-#             print("Errors: " )
-#             print("-------------------------------")
-#             for i in range(len(self.errors)):
-#                 print(self.errors[i].shape)
-#             print("-------------------------------")
-#
-# # def deltaL(AL,y, derAct_out, derCost):
-# #     nL = AL.shape[0]
-# #     n_input = AL.shape[1]
-# #     deltaL = np.zeros((nL,n_input))
-# #     for index in range(n_input):
-# #         M = np.zeros((nL,nL))
-# #         for c in range(len(y)):
-# #             for i in range(len(y)):
-# #                 M[c,i] = derAct_out(i,c,AL[:,index])
-# #         derC_vec = derCost(AL[:,index], y[:,index])
-# #         deltaL[:,index] = M@derC_vec
-# #
-# #     return deltaL

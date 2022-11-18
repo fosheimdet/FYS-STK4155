@@ -2,79 +2,42 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 
 
+#Subtracts the mean of a given column from all elements of that column.
+#Doesn't scale column 0, thereby allowing an intercept to be calculated
+def scaler(X,X_mean):
+    colInd = 1
+    #X_train_mean = np.mean(X_train,0) #Mean of columns
+    # X[:,colInd:] = X[:,colInd:] - np.mean(X[:,colInd:],0)
+    X[:,colInd:] = X[:,colInd:] - X_mean[colInd:]
+    # print("After scaling: ", X)
+    return X
 
-from neural_network import FFNN
-
-
-def gridsearch(itIndices, hyperparams, regression=True):
-
-    epoch_vals= [20,50,80,100,150,200,250,300]
-    M_vals = [5,10,20,30,50,80,100,150]
-    eta_vals = np.logspace(-5, 1, 7)
-    lmbd_vals = np.logspace(-5, 1, 7)
-
-
-    valList = [epoch_vals,  M_vals, eta_vals,  lmbd_vals] #List containing values we want to loop over
-
-    iterableStr = ['epochs','batch size','eta','lambda']
-                #       0        1         2       3
-
-    #itIndices=[2,3] #Pick which variables to iterate over
-
-    iterable1 = valList[itIndices[0]]
-    iterable2 = valList[itIndices[1]]
-
-    score_train = np.zeros((len(iterable1), len(iterable2)))
-    score_test = np.zeros((len(iterable1), len(iterable2)))
-
-    # score_train_sk = np.zeros((len(iterable1), len(iterable2)))
-    # score_test_sk = np.zeros((len(iterable1), len(iterable2)))
+def scale_data(X_train,X_test,sklearn=True):
 
 
-    for i, it1 in enumerate(iterable1):
-        for j, it2 in enumerate(iterable2):
-            hyperparams[itIndices[0]] = it1
-            hyperparams[itIndices[1]] = it2
-            #Using our own NN
-            MLP = FFNN(X_train, y_train, nhidden, lengths,sigmoidL, softmaxL,derCrossEntropy,True, hyperparams)
-            MLP.initializeNetwork()
-            MLP.train()
+    if(sklearn):
+        #Scale columns by subtracting their mean and dividing by their std.
+        #Done through sklearn
+        scaler = StandardScaler()
+        scaler.fit(X_train)
+        X_train_scaled = scaler.transform(X_train)
 
-            output_train, output_test = MLP.feedForward(X_train), MLP.feedForward(X_test)
-            if(regression==True):
-                score_train[i,j]= getMSE(y_train, output_train)
-                score_test[i,j] = getMSE(y_test, output_test)
-            else:
-                score_train[i,j] = accuracy(output_train, y_train, True)
-                score_test[i,j] = accuracy(output_test, y_test, True)
+        scaler.fit(X_test)
+        X_test_scaled = scaler.transform(X_test)
 
-            #Using sklearn's NN
-            # MLP_sklearn = MLPClassifier(hidden_layer_sizes = lengths[1:-1], activation = 'logistic', solver = 'sgd',
-            # alpha = lmbd, batch_size = M, learning_rate_init = eta, max_iter = epochs, momentum = 0)
-            # MLP_sklearn.fit(X_train,y_train)
-            # output_train_sk, output_test_sk = MLP_sklearn.predict(X_train), MLP_sklearn.predict(X_test)
-            # acc_train_sk, acc_test_sk = accuracy(output_train_sk, y_train, True), accuracy(output_test_sk, y_test, True)
-            # train_accuracies_sk[i,j] = acc_train_sk
-            # test_accuracies_sk[i,j] = acc_test_sk
-    if(regression):
-        it1_opt = np.where(score_test == np.min(score_test))[0][0]
-        it2_opt = np.where(score_test == np.min(score_test))[1][0]
+
     else:
-        it1_opt = np.where(score_test == np.max(score_test))[0][0]
-        it2_opt = np.where(score_test == np.max(score_test))[1][0]
+        #Scale columns by subtracting the mean
+        n_features = X_train.shape[1]
+        X_train_scaled, X_test_scaled = X_train, X_test
+        for i in range(n_features):
+            mu_train = np.mean(X_train[:,i])
+            mu_test = np.mean(X_test[:,i])
+            X_train_scaled[:,i] = (X_train[:,i]-mu_train)
+            X_test_scaled[:,i] = (X_test[:,i]-mu_test)
 
-    return score_train, score_test, it1_opt, it2_opt
+    return X_train_scaled, X_test_scaled
 
-
-def scale_data(X_train,X_test):
-
-    #Scale X_train using the mean and std of its own columns
-    scaler = StandardScaler()
-    scaler.fit(X_train)
-    X_train_scaled = scaler.transform(X_train)
-
-    scaler.fit(X_test)
-    X_test_scaled = scaler.transform(X_test)
 
     #Use mean and std of the columns of X_train to scale X_test
     # n_features = X_train.shape[1]
@@ -87,10 +50,16 @@ def scale_data(X_train,X_test):
     return X_train_scaled, X_test_scaled
 
 
+def to_categorical_numpy(integer_vector):
+    n_inputs = len(integer_vector)
+    n_categories = np.max(integer_vector) + 1
+    onehot_vector = np.zeros((n_inputs, n_categories))
+    onehot_vector[range(n_inputs), integer_vector] = 1
+
+    return onehot_vector
+
+#Calculate accuracy score given one-hot encoded y
 def accuracy(y, pred):
-    """
-    Accuracy score for classification.
-    """
     y = np.argmax(y, axis = 1)
     pred = np.argmax(pred, axis = 1)
 
@@ -116,6 +85,25 @@ def addNoise(z,sigma):
         z_noise[i]=z[i] + epsilon
     return z_noise
 
+
+def OLS(X,z,skOLS):
+    if(skOLS):
+        regressor = LinearRegression(fit_intercept=True)
+        regressor.fit(X,z)
+        beta_hat = regressor.coef_.T
+    else:
+        beta_hat = np.linalg.pinv(X.T@X)@X.T@z
+    return beta_hat
+
+def ridge(X,z,lmd):
+    lamb = lmd
+    lamb = pow(10,lmd) #The input are log values in range e.g. -6 to 0
+    lmd = lamb
+    n = X.shape[1]
+    I_n = np.identity(n)
+    beta_hat = np.linalg.pinv(X.T@X+lmd*I_n)@X.T@z
+    return beta_hat
+
 def desMat(xr,yr,p):
     N = len(xr)
     numEl = int((p+2)*(p+1)/2)#Number of elements in beta
@@ -129,10 +117,12 @@ def desMat(xr,yr,p):
 
 def desMat1D(x,p):
     N = len(x)
-    X = np.ones(N,p+1)
-    for i in range(p+1):
-        X[:,p] = x**i
+    X = np.ones((N,p))
+    for i in range(1,p):
+        X[:,i] = x**i
     return X
+
+
 
 
 def getR2(z,z_tilde):
