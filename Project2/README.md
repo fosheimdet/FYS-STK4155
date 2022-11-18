@@ -1,3 +1,4 @@
+#EditReadme
 Project 2
 
 optimizers.py            Script containing various optimization functions used to produce the plots of task a
