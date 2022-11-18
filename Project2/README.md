@@ -1,3 +1,5 @@
+#Project 2
+
 optimizers.py            Script containing various optimization functions used to produce the plots of task a
 neural_network.py        Class containing our neural network
 franke_regression.py     Script used for evaluating the performance of the NN on Franke data
