@@ -1,13 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.image as img
 import seaborn as sns
 import time
+from scipy import signal
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 
 from neural_network import FFNN
-from layers import Dense
-from functions import scale_data, accuracy, to_categorical_numpy
+from layers import Dense, Conv2D, Flatten
+from functions import scale_data, accuracy, to_categorical_numpy, cross_corr
 from activation_functions import noActL, sigmoidL, reluL, tanhL, softmaxL
 
 
@@ -40,33 +42,104 @@ epochs = 100
 M = 20
 eta = 0.01
 lmbd = 1e-4
-gridsearchBool = True
+gridsearchBool = False
 
 hyperparams = [epochs,M,eta,lmbd]
 
 ##===================================================================================
 #                               Model assessment
 ##===================================================================================
-model = FFNN(X_train,y_train,hyperparams)
+# model = FFNN(X_train,y_train,hyperparams)
+# ##--------------------------------------------------------
+# model.addLayer( Dense(50,sigmoidL) ) #Add input shape as parameter?
+# # model.addLayer( Dense(5,reluL) )
+# model.addLayer( Dense(y.shape[1],softmaxL) )
+# ##--------------------------------------------------------
+# model.initialize_network()
+#
+# #model.changeAct(0,sigmoidL)
+#
+# t_start = time.time()
+# model.train()
+# t_end = time.time()
+# print("Training time: ", t_end-t_start)
+
+model = FFNN(X.shape)
 ##--------------------------------------------------------
 model.addLayer( Dense(50,sigmoidL) ) #Add input shape as parameter?
 # model.addLayer( Dense(5,reluL) )
-model.addLayer( Dense(y.shape[1],softmaxL) )
+model.addLayer( Dense(10,softmaxL) )
 ##--------------------------------------------------------
 model.initialize_network()
 
+#model.changeAct(0,sigmoidL)
+
 t_start = time.time()
-model.train()
+model.train(X_train,y_train,hyperparams)
 t_end = time.time()
 print("Training time: ", t_end-t_start)
 
 
-output_train, output_test = model.predict(X_train), model.predict(X_test)
+output_train, output_test = model.predict(X_train),model.predict(X_test)
 
 acc_train=accuracy(output_train,y_train)
 acc_test=accuracy(output_test,y_test)
 print("acc_train: ", acc_train)
 print("acc_test: ", acc_test)
+
+#bla = model.predict(X_test[0,:][np.newaxis,:])
+
+##============================================================================
+
+dataset = datasets.load_digits()  #Dowload MNIST dataset (8x8 pixelss)
+
+input = dataset.images
+labels = dataset.target
+
+test = input[0:2]
+print(dataset.images.shape)
+
+
+# plt.figure()
+# plt.imshow(test[0], cmap='gray', interpolation = 'nearest')
+# plt.figure()
+# plt.imshow(input[1], cmap='gray', interpolation = 'nearest')
+
+
+# full: full cross-corr
+# same: pad such that output has the same dimensions
+# valid: no padding
+padding = "same"
+cnn = FFNN(test.shape)
+cnn.addLayer(Conv2D((3,3),sigmoidL,padding))
+cnn.addLayer(Conv2D((5,5),sigmoidL,padding))
+#cnn.addLayer(Flatten())
+cnn.initialize_network()
+
+print("K_0: ", cnn.layers[0].K)
+
+output = cnn.predict(test)
+print("output shape:\n ", output.shape)
+
+plt.figure()
+plt.imshow(output[0], cmap='gray', interpolation = 'nearest')
+plt.show()
+##============================================================================
+# cnn2 = FFNN(test.shape)
+# cnn2.addLayer(Conv2D((3,3),sigmoidL,padding))
+# cnn2.addLayer(Conv2D((5,5),sigmoidL,padding))
+# cnn2.addLayer(Flatten())
+# cnn2.addLayer(Dense(10, softmaxL))
+#
+# cnn2.initialize_network()
+#
+# output2 = cnn2.predict(test)
+# print("output 3 layered: ", output2)
+# # output2 = output.reshape(8,8)
+# #
+# # plt.figure()
+# # plt.imshow(output2, cmap='gray', interpolation = 'nearest')
+# #
 
 
 ##===================================================================================
