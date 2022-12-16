@@ -1,13 +1,14 @@
 import numpy as np
+import time
 from activation_functions import sigmoidL,reluL,leakyReluL, tanhL
-from layers import Dense
+# from layers import Dense
 
 
 
 
 #Classical way. X.shape = [n_inputs, n_features]
 #Here the weights are indexed with rows corresponding to the neurons of the previous layer and columns corresponding to nodes of the current layer
-class FFNN:
+class CNN:
     def __init__(self,shape_features):
         self.shape_features = shape_features[1:]
         self.layers = []
@@ -23,10 +24,10 @@ class FFNN:
     ##-------------Initialize weights and biases------
     def initialize_network(self):
         self.L = len(self.layers)
-
         self.layers[0].initialize(self.shape_features) #Need to pass the shape of previous layer to construct weights
         for l in range(1,self.L):
             self.layers[l].initialize(self.layers[l-1].shape)
+
 
     ##--------------Make prediction---------------------
     def predict(self, X):
@@ -83,6 +84,7 @@ class FFNN:
         n_inputs = X_train.shape[0]
         indices =np.arange(n_inputs)
         m = int(n_inputs/batch_size)
+        t_start = time.time()
         for epoch in range(epochs):
             for i in range(m):
                 batch_indices = np.random.choice(indices, batch_size, replace=False)
@@ -91,25 +93,35 @@ class FFNN:
                 self.predict(X_batch)
                 self.backpropagate(y_batch)
                 self.update(X_batch,eta,lmbd)
+        t_end = time.time()
+        print(f"Completed training with {epochs} epochs in {t_end-t_start} s.")
 
-        print(f"Completed training with {epochs} epochs")
 
 
-
-    def displayNetwork(self,errors=False):
+    def summary(self,errors=False):
 
         print("A: " )
-        print("-------------------------------")
+        print("----------------------------------------------------")
+        print("Layer            Output shape            Param # ")
+        print("====================================================")
+        print('{:19s} {:22s} {}'.format('Input',str(self.shape_features),16))
+        print("----------------------------------------------------")
         for l in range(self.L):
-            print(self.layers[l].A.shape)
-        print("-------------------------------")
-        if(errors == True) :
-            print("Errors: " )
-            print("-------------------------------")
-        for l in range(self.L):
-            print(self.layers[l].delta.shape)
-            print("-------------------------------")
-            print("batch_size: ", self.batch_size)
+            layer = self.layers[l]
+            # print(self.layers[l].A.shape)
+            name = type(layer).__name__
+            shape = str(layer.shape)
+            n_params = layer.n_param
+            print('{:19s} {:22s} {}'.format(name,shape,n_params))
+            # print(type(layer).__name__, "\t\t", layer.shape )
+            print("----------------------------------------------------")
+        # if(errors == True) :
+        #     print("Errors: " )
+        #     print("-------------------------------")
+        # for l in range(self.L):
+        #     print(self.layers[l].delta.shape)
+        #     print("-------------------------------")
+        #     print("batch_size: ", self.batch_size)
 
 
 

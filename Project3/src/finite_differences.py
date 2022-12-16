@@ -1,16 +1,22 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.image as img
+
 import seaborn as sns
 import time
 from scipy import signal
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+import matplotlib.image as img
+from PIL import Image
 
-from neural_network import FFNN
-from layers import Dense, Conv2D, Flatten
+from neural_network import CNN
+from dense import Dense
+from convolutional import Conv2D
+from flatten import Flatten
+from max_pool import MaxPool
 from functions import scale_data, accuracy, to_categorical_numpy, cross_corr
 from activation_functions import noActL, sigmoidL, reluL, tanhL, softmaxL
+from finite_diff import finite_diff
 
 
 
@@ -32,7 +38,7 @@ def preprocess(classification_dataset,images=True, biases = False):
 
     return X,y
 
-np.random.seed(0)
+# np.random.seed(0)
 
 
 
@@ -44,9 +50,10 @@ X_train, X_test = scale_data(X_train,X_test)
 
 ##============Hyperparameters=====================
 epochs = 100
-M = 1
+M = 20
 eta = 0.01
 lmbd = 1e-4
+
 gridsearchBool = False
 
 hyperparams = [epochs,M,eta,lmbd]
@@ -72,82 +79,149 @@ print(X[0].shape)
 # full: full cross-corr
 # same: pad such that output has the same dimensions
 # valid: no padding
-padding = "same"
-cnn = FFNN(X.shape)
-cnn.addLayer(Conv2D((3,3),sigmoidL,padding))
-cnn.addLayer(Conv2D((5,5),sigmoidL,padding))
-cnn.addLayer(Flatten())
-cnn.addLayer(Dense(10,softmaxL))
-#cnn.addLayer(Flatten())
 
-cnn.initialize_network()
-#print(cnn.predict(X_train[0:2]).shape)
+
+# padding = "full"
+# model = CNN(X.shape)
+# model.addLayer(Conv2D((3,3),sigmoidL,padding))
+# model.addLayer(Flatten())
+# model.addLayer(Dense(10,softmaxL))
+# #model.addLayer(Flatten())
 #
-# cnn.train(X_train,y_train,hyperparams)
-# cnn.predict(X[0])
-# cnn.train(hyperparams)
-
-K0 = cnn.layers[0].K
-
-def cross_entropy(AL,y):
-    return -np.sum(y*np.log(AL))
-
-
-def finite_diff(model,layer_ind,X, y, cost_func):
-    K = model.layers[layer_ind].K
-    #output = model.predict(test)
-    # cost_before = np.sum(output[0])
-    print(X[0:2,:,:].shape)
-
-    output = model.predict(X[0:2,:,:])
-    # cost_before = -np.sum(y[sample_ind,:]*np.log(output[sample_ind,:]))
-    cost_before = -np.sum(y*np.log(output))
-
-    model.backpropagate(y)
-
-    Atilde = np.pad(X,((0,0),(1,1),(1,1)))
-    delCdelK = signal.correlate2d(Atilde[0],model.layers[layer_ind].delta[0], mode="valid")
-    for n in range(1,X.shape[0]):
-        delCdelK+=signal.correlate2d(Atilde[n],model.layers[layer_ind].delta[n], mode="valid")
-
-    print("delCdelK: \n ", delCdelK)
-    partial_analytical = delCdelK[0,2]
-    print(partial_analytical)
-
-    dw = 1e-10
-    delCdelK_num = np.zeros(delCdelK.shape)
-    for u in range(delCdelK.shape[0]):
-        for v in range(delCdelK.shape[1]):
-            K0[u,v]+=dw
-            output2 = model.predict(X)
-            # cost_after = np.sum(output2[0])
-            # cost_after =-np.sum(y[sample_ind,:]*np.log(output2[sample_ind,:]))
-            cost_after = -np.sum(y*np.log(output2))
-            delCdelK_num[u,v] = (cost_after-cost_before)/dw
-            K0[u,v]-=dw
-
-    print(delCdelK_num)
-
-layer_ind = 0
-finite_diff(cnn,layer_ind,X_train[0:2],y_train[0:2], cross_entropy)
-
-
-    # plt.figure()
-    # plt.imshow(output[0], cmap='gray', interpolation = 'nearest')
-    # plt.show()
-# K0[0,2] += dw
-# output2 = cnn.predict(test)
-# cost_after = np.sum(output2[0])
+# model.initialize_network()
 #
-# partial_numerical = (cost_after-cost_before)/dw
-# print("analytical: ", partial_analytical)
-# print("numerical: ", partial_numerical)
+# t_start = time.time()
+# model.train(X_train,y_train,hyperparams)
+# t_end = time.time()
+# print("Training time: ", t_end-t_start)
+#
+#
+# output_train, output_test = model.predict(X_train),model.predict(X_test)
+#
+# acc_train=accuracy(output_train,y_train)
+# acc_test=accuracy(output_test,y_test)
+# print("acc_train: ", acc_train)
+# print("acc_test: ", acc_test)
+#
+#
+#
+# model.summary()
 
-# for l in range(len(cnn.layers)):
-#     print("delta ", l)
-#     print(cnn.layers[l].delta)
 
-# print("Cost: ", cost)
+#
+# # plt.imshow(m_image)
+# plt.show()
+
+# m_image = img.imread("nature.png")
+# plt.subplot(2, 2,1)
+# plt.axis('off')
+# plt.imshow(m_image)
+# plt.subplot(2, 2,2)
+# plt.axis('off')
+# plt.imshow(m_image[:,:,0])
+# plt.subplot(2, 2,3)
+# plt.axis('off')
+# plt.imshow(m_image[:,:,1])
+# plt.subplot(2, 2,4)
+# plt.axis('off')
+# plt.imshow(m_image[:,:,2])
+# #plt.imshow(m_image, cmap=plt.cm.gray_r, interpolation='nearest')
+# # plt.title("Label: %d" % digits.target[random_indices[i]])
+# plt.show()
 
 
-# print("output shape: ", output.shape)
+# fig = plt.figure(figsize=(2, 2))
+# columns = 4
+# rows = 5
+# for i in range(1, columns*rows +1):
+#     img = np.random.randint(10, size=(h,w))
+#     fig.add_subplot(rows, columns, i)
+#     plt.imshow(img)
+# plt.show()
+
+##==================================================
+
+
+input = X[0:2]
+print("input: ")
+print(input)
+targets = y[0:2]
+# model = CNN(X.shape)
+model = CNN(input.shape)
+model.addLayer( Conv2D((3,3),sigmoidL,"same") )
+# model.addLayer( Conv2D((3,3),sigmoidL,"same") )
+# model.addLayer( Conv2D((3,3),sigmoidL,"same") )
+# model.addLayer( MaxPool((2,2),2,"same") )
+# model.addLayer( Conv2D((3,3),sigmoidL,"same") )
+# model.addLayer( MaxPool((2,2),2,"same") )
+model.addLayer( Flatten() )
+model.addLayer( Dense(10,softmaxL) )
+#model.addLayer(Flatten())
+model.initialize_network()
+# output = model.predict(X[0:20])
+t_start = time.time()
+output = model.predict(input)
+t_end = time.time()
+print("Forward prop. time: ", t_end-t_start)
+
+# t_start = time.time()
+# model.train(X_train,y_train,hyperparams)
+# t_end = time.time()
+# print("Backprop. time: ", t_end-t_start)
+# y_tilde = model.predict(X_train)
+# y_pred = model.predict(X_test)
+# acc_train = accuracy(y_train,y_tilde)
+# acc_test = accuracy(y_test,y_pred)
+#
+# print("acc_train: ", acc_train)
+# print("acc_test: ", acc_test)
+
+##===================================================================================
+#                               Model selection
+##===================================================================================
+
+eta_vals = np.logspace(-5, 1, 7)
+lmbd_vals = np.logspace(-6, 0, 7)
+# eta_vals = np.logspace(-2, -1, 2)
+# lmbd_vals = np.logspace(-2, -1, 2)
+acc_train = np.zeros((len(lmbd_vals), len(eta_vals)))
+acc_test = np.zeros((len(lmbd_vals), len(eta_vals)))
+gridsearchBool = True
+
+model = CNN(X_train.shape)
+model.addLayer( Conv2D((3,3),sigmoidL,"same") )
+model.addLayer( Flatten() )
+model.addLayer( Dense(y.shape[1],softmaxL) )
+if(gridsearchBool):
+    for i,eta in enumerate(eta_vals):
+        for j,lmbd in enumerate(lmbd_vals):
+            hyperparams = [epochs,M,eta,lmbd]
+
+            model.initialize_network() #Needed to reset the weights
+            model.train(X_train,y_train,hyperparams)
+
+            y_pred = model.predict(X_test)
+            y_tilde = model.predict(X_train)
+
+            # theta_opt = logistic(X_train,y_train,epochs,M,eta,lmbd,gamma,False)
+            # y_pred = np.floor(softmax(X_test@theta_opt)+0.5)
+            # y_tilde = np.floor(softmax(X_train@theta_opt)+0.5)
+            acc_train[i,j] = accuracy(y_tilde,y_train)
+            acc_test[i,j] = accuracy(y_pred,y_test)
+
+    fig, ax = plt.subplots(figsize = (10, 10))
+    sns.heatmap(100*acc_test,xticklabels = lmbd_vals, yticklabels =eta_vals,
+             annot=True, ax=ax, cmap="rocket", fmt = '.2f',cbar_kws={'format': '%.0f%%'})
+    ax.set_title("Test accuracy(%) on MNIST data using CNN with SGD\n" +
+    f"epochs={epochs}, batch size={M}")
+    ax.set_xlabel("$\lambda$")
+    ax.set_ylabel("$\eta$")
+
+    fig, ax = plt.subplots(figsize = (10, 10))
+    sns.heatmap(100*acc_train,xticklabels = lmbd_vals, yticklabels =eta_vals,
+            annot=True, ax=ax, cmap="rocket", fmt = '.2f',cbar_kws={'format': '%.0f%%'})
+    ax.set_title("Training accuracy(%) on MNIST data using CNN with SGD \n" +
+    f"epochs={epochs}, batch size={M}")
+    ax.set_xlabel("$\lambda$")
+    ax.set_ylabel("$\eta$")
+    plt.show()

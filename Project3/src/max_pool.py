@@ -2,18 +2,23 @@ import numpy as np
 
 
 
-class Max_pool():
+class MaxPool():
     def __init__(self, pool_shape, stride, padding="same"):
         self.pool_size = pool_shape[0]
         self.stride = stride
         self.padding = padding #"Same": pad so that every element gets pooled. "valid": discards edges if these can't be included without padding
 
         self.shape = None
+        self.shape_prev = None
         self.pad_y = None #Padding to be used on input.
         self.pad_x = None
         self.A = None
+        self.delta = None
+        self.max_coord = None  #Matrix containing location of the max values. Same shape as pooled matrix.
+
 
     def initialize(self,shape_prev):
+        self.shape_prev = shape_prev
         Height_p = shape_prev[0]
         Width_p = shape_prev[1]
 
@@ -51,120 +56,79 @@ class Max_pool():
         elif(self.padding=="valid"):
             Height = 1+int((Height_p-self.pool_size-remainder_y)/self.stride)
             Width=  1+int((Width_p-self.pool_size-remainder_x)/self.stride)
+            if(self.pool_size > Height_p):
+                print("Warning: Pool size is greater than height of input. Not supported in 'valid' mode.")
+            if(self.pool_size > Width_p):
+                print("Warning: Pool siplt.show()ze greater than width of input. Not supported in 'valid mode.")
+
         ##=======================================================================
-        # #Finally calculate the shape of the output from the applied padding
-        # Height = 1+int((Height_p-self.pool_size+self.pad_y)/self.stride)
-        # Width=  1+int((Width_p-self.pool_size+self.pad_x)/self.stride)
+
 
         self.shape = (Height,Width)
 
     def feedForward(self,input):
+
+
         n_samples = input.shape[0]
+
+        self.max_coord = np.zeros((n_samples,)+input[0].shape)  #Ensures we remove coordinates from previous forward pass
         input_padded = np.pad(input,((0,0),(0,self.pad_y),(0,self.pad_x)))
-        print("input_padded: ")
-        print(input_padded)
+
 
         self.A =np.zeros((n_samples,)+self.shape)
         S = self.stride
         p = self.pool_size
-        print("shape output: ", self.shape)
         for n in range(n_samples):
             for i in range(self.shape[0]):
                 for j in range(self.shape[1]):
                     pool = input_padded[n,(i*S):(i*S+p),(j*S):(j*S+p)]
-                    #print(pool)
                     self.A[n,i,j] = np.max(pool)
 
-                    #print(pool)
-                    # self.A[n,i,j] = np.max(input[n,i*self.stride:(i+1)*self.stride,
-                    #                                j*self.stride:(j+1)*self.stride])
+                    pool_coord_flat= np.argmax(pool)
+                    pool_coords = np.unravel_index(pool_coord_flat,pool.shape)
+                    absolute_coords = (i*S+pool_coords[0],j*S+pool_coords[1])
+                    absolute_coord_flat = absolute_coords[0]*input[n,:,:].shape[1]+absolute_coords[1]
 
+                    self.max_coord[n,i,j] = absolute_coord_flat
 
         return self.A
+
+    def backpropagate(self,input):
+        n_samples = input.shape[0]
+        self.delta = np.zeros((n_samples,)+self.shape_prev)
+
+        #=========Needs adjustment for multiple channels====================
+        for n in range(n_samples):
+            for i in range(self.A[0,:,:].shape[0]):
+                for j in range(self.A[0,:,:].shape[1]):
+
+                    coord_flat = int(self.max_coord[n,i,j])
+                    delta_coords = np.unravel_index(coord_flat,self.delta[n,:,:].shape)
+
+                    #Multiple elements in self.A (pooled layer) may come from the same node in
+                    #the input (layer to be pooled) in case the steps result in filter overlap.
+                    #We therefore sum errors that stem from the same node in the imput.
+                    self.delta[n][delta_coords]+= input[n,i,j]
+
+
+        return self.delta
+
+    def update(self,*args):
+        return None
 
 
 a = np.arange(0,20)
 A = a.reshape(5,4)
+A = np.random.randint(0,20,(3,4))
 A = A[np.newaxis,:]
-print("A.shape:", A.shape[1:])
-print(A)
+
 
 pool_shape = (3,3)
-stride = 2
+stride = 1
 print("pool_size: ", pool_shape[0])
 print("stride: ", stride)
-max = Max_pool(pool_shape,stride,"same")
+max = MaxPool(pool_shape,stride,"valid")
 max.initialize(A.shape[1:])
 output = max.feedForward(A)
 
-
-print("---------------")
-print(output)
-
-# from PIL import Image, ImageOps
-# import matplotlib.pyplot as plt
-#
-# def plot_image(img: np.array):
-#     plt.figure(figsize=(6,6))
-#     plt.imshow(img,cmap='gray')
-#     plt.show()
-#
-# def plot_two_images(img1: np.array, img2: np.array):
-#     ax = plt.subplots(1,2, figsize(12,6))
-#     ax[0].show(img1,cmap='gray')
-#     ax[1].show(img2,cmap='gray')
-#
-# img = Image.open('doggo.jpeg')
-# print(img)
-# img= ImageOps.grayscale(img)
-# print(img)
-# #img = img.resize(size=(224,224))
-# plot_image(img)
-
-
-
-
-# conv_layer = A
-#
-# input_height,input_width = conv_layer.shape[0], conv_layer.shape[1]
-#
-# pool_size = 4
-# stride = 2
-#
-# R = input_height - pool_size
-#
-# p=0
-# if(R%stride !=0):
-#     p = pool_size-R%stride
-# print("R: ", R)
-# print("stride: ", stride)
-# print("pool_size: ", pool_size)
-# print("p: ",p)
-#
-# conv_padded = np.pad(conv_layer, ((0,p),(0,p)) )
-# print(conv_padded)
-#
-# R_out = 1+conv_padded.shape[0] -pool_size
-# width_out = 1+int(R_out/stride)
-#
-# max_layer = np.zeros((width_out,width_out))
-#
-#
-# # output_width = np.ceil()
-#
-# for i in range(width_out):
-#     for j in range(width_out):
-#         max_layer[i,j] = np.max(conv_padded[i*stride:(i+1)*stride,j*stride:(j+1)*stride])
-# print("max_layer: ")
-# print(max_layer)
-#
-# # k,l = 0,0
-# # for i in np.arange(input_height,step=stride):
-# #     for j in np.arange(input_width,step=stride):
-# #         pool = conv_padded[i:i+pool_size,j:j+pool_size]
-# #         max_layer[k,l] = np.max(pool)
-# #         print(np.max(pool))
-# #         l+=1
-# #     l=0
-# #     k+=1
-# # print(max_layer)
+max.backpropagate(output)
