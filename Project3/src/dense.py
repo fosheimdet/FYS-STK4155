@@ -21,9 +21,9 @@ class Dense:
         self.n_param = None
 
     def initialize(self,shape_prev): #Construct the weights and biases based on the shape of the input
-        n_features = shape_prev[0]
+        n_features = shape_prev[0] #original shape before pruning: (n_samples,n_features)
         self.W = np.random.normal(0,1,(n_features,self.n_l)) #Initialize using normal distribution
-        self.b = np.repeat(0.01,self.n_l) #Will be automatically shaped to appropriately
+        self.b = np.repeat(0.01,self.n_l) #Will be automatically "reshaped" by numpy to a matrix in vector-matrix addition
         self.n_param = np.prod(self.W.shape)+len(self.b)
 
         self.shape = (self.n_l,)
@@ -44,6 +44,6 @@ class Dense:
     #     return self.delta        #Passing only delta would require that the next layer aquire this layers weights to calculate its delta
 
 
-    def update(self,eta,lmbd,A_p):
-        self.W -= eta*(A_p.T@self.delta +lmbd*self.W)
+    def update(self,A_prev,eta,lmbd):
+        self.W -= eta*(A_prev.T@self.delta +lmbd*self.W)
         self.b -= eta*(np.ones(self.delta.shape[0])@self.delta + lmbd*self.b)

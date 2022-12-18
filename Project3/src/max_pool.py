@@ -3,7 +3,7 @@ import numpy as np
 
 
 class MaxPool():
-    def __init__(self, pool_shape, stride, padding="same"):
+    def __init__(self, pool_shape, stride=2, padding="same"):
         self.pool_size = pool_shape[0]
         self.stride = stride
         self.padding = padding #"Same": pad so that every element gets pooled. "valid": discards edges if these can't be included without padding
@@ -19,8 +19,12 @@ class MaxPool():
 
     def initialize(self,shape_prev):
         self.shape_prev = shape_prev
-        Height_p = shape_prev[0]
-        Width_p = shape_prev[1]
+        Height_p,Width_p,n_channels = shape_prev
+        print("shape_prev<max>:",shape_prev)
+        # Height_p = shape_prev[1]
+        # Width_p = shape_prev[2]
+        # n_channels = shape_prev[-1]
+
 
         self.pad_y = 0
         self.pad_x = 0
@@ -59,76 +63,87 @@ class MaxPool():
             if(self.pool_size > Height_p):
                 print("Warning: Pool size is greater than height of input. Not supported in 'valid' mode.")
             if(self.pool_size > Width_p):
-                print("Warning: Pool siplt.show()ze greater than width of input. Not supported in 'valid mode.")
+                print("Warning: Pool size is greater than width of input. Not supported in 'valid' mode.")
+            assert(self.pool_size <=Height_p and self.pool_size <= Width_p)
 
         ##=======================================================================
 
 
-        self.shape = (Height,Width)
+        self.shape = (Height,Width,n_channels)
 
     def feedForward(self,input):
-
-
         n_samples = input.shape[0]
+        n_channels = input.shape[-1]
 
         self.max_coord = np.zeros((n_samples,)+input[0].shape)  #Ensures we remove coordinates from previous forward pass
-        input_padded = np.pad(input,((0,0),(0,self.pad_y),(0,self.pad_x)))
+        input_padded = np.pad(input,((0,0),(0,self.pad_y),(0,self.pad_x),(0,0)))
 
 
         self.A =np.zeros((n_samples,)+self.shape)
         S = self.stride
         p = self.pool_size
         for n in range(n_samples):
-            for i in range(self.shape[0]):
-                for j in range(self.shape[1]):
-                    pool = input_padded[n,(i*S):(i*S+p),(j*S):(j*S+p)]
-                    self.A[n,i,j] = np.max(pool)
+            for c in range(n_channels):
+                for i in range(self.shape[0]):
+                    for j in range(self.shape[1]):
+                        pool = input_padded[n, (i*S):(i*S+p),(j*S):(j*S+p), c]
+                        self.A[n,i,j,c] = np.max(pool)
+                        #Get coordinates of maximum value
+                        pool_coord_flat= np.argmax(pool)
+                        pool_coords = np.unravel_index(pool_coord_flat,pool.shape)
+                        absolute_coords = (i*S+pool_coords[0],j*S+pool_coords[1])
+                        absolute_coord_flat = absolute_coords[0]*input[n,:,:].shape[1]+absolute_coords[1]
 
-                    pool_coord_flat= np.argmax(pool)
-                    pool_coords = np.unravel_index(pool_coord_flat,pool.shape)
-                    absolute_coords = (i*S+pool_coords[0],j*S+pool_coords[1])
-                    absolute_coord_flat = absolute_coords[0]*input[n,:,:].shape[1]+absolute_coords[1]
+                        self.max_coord[n,i,j,c] = absolute_coord_flat
 
-                    self.max_coord[n,i,j] = absolute_coord_flat
-
+        # print("input<max>: \n", input[0,:,:,0])
+        # print("================================")
+        # print("self.A<max>: \n",self.A[0,:,:,0])
         return self.A
 
     def backpropagate(self,input):
         n_samples = input.shape[0]
+        n_channels = self.shape[-1]
         self.delta = np.zeros((n_samples,)+self.shape_prev)
 
         #=========Needs adjustment for multiple channels====================
         for n in range(n_samples):
-            for i in range(self.A[0,:,:].shape[0]):
-                for j in range(self.A[0,:,:].shape[1]):
+            for c in range(n_channels):
+                for i in range(self.A[0,:,:,c].shape[0]):
+                    for j in range(self.A[0,:,:,c].shape[1]):
 
-                    coord_flat = int(self.max_coord[n,i,j])
-                    delta_coords = np.unravel_index(coord_flat,self.delta[n,:,:].shape)
+                        coord_flat = int(self.max_coord[n,i,j,c])
+                        delta_coords = np.unravel_index(coord_flat,self.delta[n,:,:,c].shape)
 
-                    #Multiple elements in self.A (pooled layer) may come from the same node in
-                    #the input (layer to be pooled) in case the steps result in filter overlap.
-                    #We therefore sum errors that stem from the same node in the imput.
-                    self.delta[n][delta_coords]+= input[n,i,j]
+                        #Multiple elements in self.A (pooled layer) may come from the same node in
+                        #the input (layer to be pooled) in case the steps result in filter overlap.
+                        #We therefore sum errors that stem from the same node of the input.
+                        self.delta[n,:,:,c][delta_coords]+= input[n,i,j,c]
 
-
+        # print("delta.shape<max>:", self.delta.shape)
+        # print("A.shape<max>:",self.A[0,:,:,0].shape)
+        # print(self.A[0,:,:,0])
+        # print("==========================================")
+        # print("delta.shape<max>:",self.delta[0,:,:,0].shape)
+        # print(self.delta[0,:,:,0])
         return self.delta
 
     def update(self,*args):
         return None
 
+if __name__ == "__main__":
+    a = np.arange(0,20)
+    A = a.reshape(5,4)
+    A = np.random.randint(0,20,(3,4))
+    A = A[np.newaxis,:]
 
-a = np.arange(0,20)
-A = a.reshape(5,4)
-A = np.random.randint(0,20,(3,4))
-A = A[np.newaxis,:]
 
+    pool_shape = (3,3)
+    stride = 1
+    print("pool_size: ", pool_shape[0])
+    print("stride: ", stride)
+    max = MaxPool(pool_shape,stride,"valid")
+    max.initialize(A.shape[1:])
+    output = max.feedForward(A)
 
-pool_shape = (3,3)
-stride = 1
-print("pool_size: ", pool_shape[0])
-print("stride: ", stride)
-max = MaxPool(pool_shape,stride,"valid")
-max.initialize(A.shape[1:])
-output = max.feedForward(A)
-
-max.backpropagate(output)
+    max.backpropagate(output)

@@ -4,39 +4,50 @@ def cross_entropy(AL,y):
     return -np.sum(y*np.log(AL))
 
 
-def finite_diff(model,layer_ind,X, y):
-    K = model.layers[layer_ind].K
-    #output = model.predict(test)
-    # cost_before = np.sum(output[0])
-    print(X[0:2,:,:].shape)
+#Use finite differences to compare kernel gradients found in backpropagation
+#with the numerical ones
+def fd_kernel(model,layer_ind,X, y):
+    K = model.layers[layer_ind].F[0,:,:,0]
 
-    output = model.predict(X[0:2,:,:])
-    # cost_before = -np.sum(y[sample_ind,:]*np.log(output[sample_ind,:]))
+    #=========Numerical=========
+    output = model.predict(X)
     cost_before = -np.sum(y*np.log(output))
 
-    model.backpropagate(y)
-
-    Atilde = np.pad(X,((0,0),(1,1),(1,1)))
-    delCdelK_backprop = signal.correlate2d(Atilde[0],
-                model.layers[layer_ind].delta[0], mode="valid")
-    #Adding contributions from all samples, as is done in DNN
-    for n in range(1,X.shape[0]):
-        delCdelK_backprop+=signal.correlate2d(Atilde[n],model.layers[layer_ind].delta[n], mode="valid")
-
-    print("delCdelK_backprop: \n ", delCdelK_backprop)
-
-
-    dw = 1e-5
-    delCdelK_num = np.zeros(delCdelK_backprop.shape)
-    for u in range(delCdelK_backprop.shape[0]):
-        for v in range(delCdelK_backprop.shape[1]):
-            K[u,v]+=dw
+    dw = 1e-6
+    grad_num = np.zeros(K.shape)
+    for u in range(K.shape[0]):
+        for v in range(K.shape[1]):
+            K[u,v]+=dw #Actually alters the layer weights. K=... doesnt work
             output2 = model.predict(X)
-            # cost_after = np.sum(output2[0])
-            # cost_after =-np.sum(y[sample_ind,:]*np.log(output2[sample_ind,:]))
             cost_after = -np.sum(y*np.log(output2))
-            delCdelK_num[u,v] = (cost_after-cost_before)/dw
+            grad_num[u,v] = (cost_after-cost_before)/dw
             K[u,v]-=dw
+    print("===== Kernel gradients =====")
+    print("grad_num: \n ", grad_num)
+    #====Backprop/analytical====
+    model.backpropagate(y)
+    Delta_F,delta_b = model.layers[layer_ind].update(X,0,0)
+    print("grad_analytical: \n", Delta_F[0,:,:,0])
 
-    print("delCdelK_num: \n ", delCdelK_num)
-    # print(delCdelK_num)
+#Test bias gradients
+def fd_biases(model,layer_ind,X, y):
+    K = model.layers[layer_ind].F[0,:,:,0]
+    b = model.layers[layer_ind].b
+    #=========Numerical=========
+    output = model.predict(X)
+    cost_before = -np.sum(y*np.log(output))
+
+    db = 1e-10
+    bgrad_num = np.zeros(b.shape)
+    for i in range(b.shape[0]):
+        model.layers[layer_ind].b[i]+=db
+        output2_b = model.predict(X)
+        cost_after = -np.sum(y*np.log(output2_b))
+        bgrad_num[i] = (cost_after-cost_before)/db
+        model.layers[layer_ind].b[i]-=db
+    print("===== bias gradients =====")
+    print("bgrad_num: \n", bgrad_num)
+    #====Backprop/analytical====
+    model.backpropagate(y)
+    delta_F,delta_b = model.layers[layer_ind].update(X,0,0)
+    print("bgrad_analytical: \n", delta_b)

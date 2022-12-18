@@ -6,81 +6,110 @@ from scipy import signal
 
 
 class Conv2D:
-    def __init__(self,shape_kernel,actL, padding="same"):
-        self.r = int((shape_kernel[0]-1)/2) #For now only using square kernels
+    def __init__(self,n_filters,shape_kernel,actL, padding="same"):
+        self.n_filters = n_filters
+        self.k = shape_kernel[0] #For now only using square, even-sized kernels
+        self.act = actL[0] #Actiation function
+        self.d_act = actL[1] #Its derivative
+        self.pad_mode = padding #Valid or same padding
         self.p = None  #Padding size to be used on input from previous layer
-        self.padding = padding
-        self.act = actL[0]
-        self.d_act = actL[1]
 
-        self.shape = None       #Shape of this layer. Depends on number of samples in our batch
+
+
+        self.shape = None      #Shape of this layer, (Height,Width,n_filters)
         self.shape_prev = None #Shape of previous layer. Needed for backpropagation
-        self.K = None
-        self.B = None
-        self.A = None
-        self.delta = None
-        self.n_param = None
+        self.F = None    #Filters for the layer. Shape: (n_filters,Heigh,Width,n_channels)
+        self.b = None    #Biases. One for each filter.
+        self.A = None    #Activation values
+        self.delta = None #"Errors"
+        self.n_param = None #Only used for printing the network
 
     def initialize(self,shape_prev):
-        self.shape_prev = shape_prev
-        self.K = np.random.normal(0,1,(2*self.r+1,2*self.r+1))
-        self.B = 0.01
-        self.n_param = np.prod(self.K.shape) + 1
+        self.shape_prev = shape_prev #Shape of activations of previous layer (excluding sample axis)
+        n_channels = shape_prev[-1] #Number of feature maps
 
-        if(self.padding == "valid"):
+        self.F = np.random.normal(0,1,(self.n_filters,self.k,self.k,n_channels))
+        self.b = 0.01*np.ones(self.n_filters)
+        self.n_param = np.prod(self.F.shape) + self.n_filters
+
+        if(self.pad_mode == "valid"):
             self.p = 0
-        elif(self.padding == "same"):
-            self.p = self.r
-        elif(self.padding == "full"):
-            self.p = 2*self.r
+        elif(self.pad_mode == "same"):
+            # self.p = self.r
+            self.p = int((self.k-1)/2)
+        elif(self.pad_mode == "full"):
+            # self.p = 2*self.r
+            self.p = self.k-1
 
+        Height_p,Width_p = shape_prev[0:2]
+        Height = 1 + Height_p - self.k + 2*self.p
+        Width =  1 + Width_p- self.k + 2*self.p
 
-        Height_p,Width_p = shape_prev
-        Height = Height_p - 2*self.r + 2*self.p
-        Width = Width_p - 2*self.r + 2*self.p
-
-        self.shape = (Height, Width)
+        self.shape = (Height, Width, self.n_filters) #Number of channels needed for initializing the first dense layer
         return self.shape
 
     def feedForward(self,input):
         n_input = input.shape[0]
-        input_padded = np.pad(input,((0,0),(self.p,self.p),(self.p,self.p)))
-        self.A = np.zeros((n_input,self.shape[0],self.shape[1]))
+        n_channels = input.shape[-1]
+        input_padded = np.pad(input,((0,0),(self.p,self.p),(self.p,self.p),(0,0)))
+        Z = np.zeros((n_input,)+self.shape)
+        self.A = np.copy(Z)
 
-        for i in range(n_input):
-            self.A[i,:,:] = self.act( signal.correlate2d(input_padded[i],self.K, mode="valid") )
-
+        for n in range(n_input):
+            for f in range(self.n_filters):
+                for c in range(n_channels):
+                    Z[n,:,:,f]+=signal.correlate2d(input_padded[n,:,:,c],self.F[f,:,:,c], mode="valid")
+                Z[n,:,:,f]+=self.b[f]
+        self.A = self.act(Z)
         return self.A
 
     def backpropagate(self,input):
         n_samples = input.shape[0]
         self.delta = self.d_act(self.A)*input
         #Pad the delta
-        p_delta = int( (self.shape_prev[0]-self.shape[0]+2*self.r)/2 )
-        delta_padded = np.pad(self.delta,((0,0),(p_delta,p_delta),(p_delta,p_delta)))
+        p_delta = int( (self.shape_prev[0]-self.shape[0]+(self.k-1))/2 )
+        delta_padded = np.pad(self.delta,((0,0),(p_delta,p_delta),(p_delta,p_delta),(0,0)))
 
         #Generate errors for next layer (delta^{l+1}*K^{l+1})
         error = np.zeros((n_samples,)+self.shape_prev)
-        for i in range(n_samples):
-            error[i,:,:] = signal.convolve2d(delta_padded[i,:,:], self.K, mode="valid")
+        n_channels_prev = self.shape_prev[-1]
+        for n in range(n_samples):
+            for c in range(n_channels_prev):
+                for f in range(self.n_filters):
+                    error[n,:,:,c] += signal.convolve2d(delta_padded[n,:,:,f],self.F[f,:,:,c], mode="valid")
 
         return error
 
 
-    def update(self,eta,lmbd,A_p):
-        p = self.p
-        A_p_padded = np.pad(A_p,((0,0),(p,p),(p,p)))
+    def update(self,A_prev,eta,lmbd):
+        n_samples = A_prev.shape[0]
+        n_channels = A_prev.shape[-1]
+        p = self.p #Padding used on input during forward propagation
+        A_prev_padded = np.pad(A_prev,((0,0),(p,p),(p,p),(0,0)))
 
         #As in the previous project, we update using the sum of the contributions
         #from each sample
-        DK = np.zeros(self.K.shape)
+        grad_F = np.zeros(self.F.shape) #Update to the filter = summed contribution from all samples
 
-        for n in range(A_p.shape[0]):
-            DK+= signal.correlate2d(A_p_padded[n,:,:],self.delta[n,:,:],"valid")
+        for n in range(n_samples):
+            for f in range(self.n_filters):
+                for c in range(n_channels):
+                    grad_F[f,:,:,c] += signal.correlate2d(A_prev_padded[n,:,:,c],self.delta[n,:,:,f],mode="valid")
 
-        self.K -= eta*(DK + lmbd*self.K)
-        self.B -= eta*(np.sum(self.delta) + lmbd*self.B)
+        grad_b = np.zeros(len(self.b))
+        for n in range(n_samples):
+            for f in range(self.n_filters):
+                grad_b[f]+= np.sum(self.delta[n,:,:,f])
 
+        return (grad_F,grad_b) #For testing our implementation via finitie differences
 
-        # self.W -= eta*(A_p.T@self.delta +lmbd*self.W)
-        # self.b -= eta*(np.ones(self.delta.shape[0])@self.delta + lmbd*self.b)
+        # self.F -= eta*(Delta_F + lmbd*self.F)
+        # self.B -=
+        #
+        # DK = np.zeros(self.K.shape)
+        #
+        # for n in range(A_p.shape[0]):
+        #     DK+= signal.correlate2d(A_p_padded[n,:,:],self.delta[n,:,:],"valid")
+        #
+        # self.K -= eta*(DK + lmbd*self.K)
+        # self.B -= eta*(np.sum(self.delta) + lmbd*self.B)

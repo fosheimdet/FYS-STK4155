@@ -1,6 +1,31 @@
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
+# #Plots the feature maps of a convolutional layer. The input can
+# #be provided as an optional argument for comparison.
+# def plot_FMs(output,input = np.array([0])):
+#     m_one = 0 #No added subplot if no input is provided
+#     if(len(input.shape)>1):
+#         m_one = 1
+#     n_channels = output.shape[-1]
+#     a = m_one+output.shape[-1]
+#     n_cols = int(np.ceil(np.sqrt(a)))
+#     n_rows =int(np.ceil(a/n_cols))
+#
+#     fig = plt.figure(figsize=(n_rows, n_cols))
+#     if(len(input.shape)>1):
+#         fig.add_subplot(n_rows, n_cols, 1)
+#         plt.imshow(input[:,:,0], cmap='gray')
+#         #plt.imshow(input[:,:,0])
+#         plt.title("Input")
+#     for i in range(1, n_channels+1):
+#     #     img = np.random.randint(10, size=(h,w))
+#         fig.add_subplot(n_rows, n_cols, i+m_one)
+#         plt.imshow(output[:,:,i-1], cmap='gray')
+#         #plt.imshow(output[:,:,i-1])
+#         plt.title(f"Channel {i-1}")
+#     plt.show()
+
 
 #"valid" 2d cross correlation
 def cross_corr(A,K):

@@ -1,16 +1,18 @@
 import numpy as np
 import time
+import matplotlib.pyplot as plt
+
 from activation_functions import sigmoidL,reluL,leakyReluL, tanhL
 # from layers import Dense
 
 
 
-
-#Classical way. X.shape = [n_inputs, n_features]
-#Here the weights are indexed with rows corresponding to the neurons of the previous layer and columns corresponding to nodes of the current layer
+#input_shape = (n_samples,Height,Width,n_channels) for CNNs
+#and (n_samples,n_features) for DNNs
 class CNN:
-    def __init__(self,shape_features):
-        self.shape_features = shape_features[1:]
+    def __init__(self,input_shape):
+        self.shape_features = input_shape[1:]
+
         self.layers = []
         self.L = None #Number of layers
 
@@ -73,9 +75,9 @@ class CNN:
 
     def update(self,X, eta, lmbd):
         ##------------Update weights and biases ---------------------------------
-        self.layers[0].update(eta, lmbd, X)
+        self.layers[0].update(X, eta, lmbd)
         for l in range(1,self.L):
-            self.layers[l].update(eta, lmbd, self.layers[l-1].A)
+            self.layers[l].update(self.layers[l-1].A, eta, lmbd)
 
 
     def train(self, X_train, y_train, hyperparams):
@@ -86,6 +88,7 @@ class CNN:
         m = int(n_inputs/batch_size)
         t_start = time.time()
         for epoch in range(epochs):
+            t_start_epoch = time.time()
             for i in range(m):
                 batch_indices = np.random.choice(indices, batch_size, replace=False)
                 X_batch = X_train[batch_indices]
@@ -93,13 +96,16 @@ class CNN:
                 self.predict(X_batch)
                 self.backpropagate(y_batch)
                 self.update(X_batch,eta,lmbd)
+            t_end_epoch = time.time()
+            print(f"Finished epoch {epoch}/{epochs} in {t_end_epoch-t_start_epoch} s.")
         t_end = time.time()
         print(f"Completed training with {epochs} epochs in {t_end-t_start} s.")
 
 
-
+##==============================================================================
+##                     Visualization functions
+##==============================================================================
     def summary(self,errors=False):
-
         print("A: " )
         print("----------------------------------------------------")
         print("Layer            Output shape            Param # ")
@@ -115,15 +121,51 @@ class CNN:
             print('{:19s} {:22s} {}'.format(name,shape,n_params))
             # print(type(layer).__name__, "\t\t", layer.shape )
             print("----------------------------------------------------")
-        # if(errors == True) :
-        #     print("Errors: " )
-        #     print("-------------------------------")
-        # for l in range(self.L):
-        #     print(self.layers[l].delta.shape)
-        #     print("-------------------------------")
-        #     print("batch_size: ", self.batch_size)
 
+    #Plots the feature maps of a convolutional layer. The input can
+    #be provided as an optional argument for comparison.
+    def plot_FMs(self,layer,sample,input=np.array([0])):
+        m_one = 0 # Needs to be one if we want an additional subplot for the input
+        if(len(input.shape)>1):
+            m_one = 1
+        output = self.layers[layer].A
+        n_channels = output.shape[-1]
+        a = m_one+n_channels
+        #Make appropriate number of subplots
+        n_cols = int(np.ceil(np.sqrt(a)))
+        n_rows =int(np.ceil(a/n_cols))
 
+        fig = plt.figure(figsize=(n_rows, n_cols))
+        # plt.title("hey")
+        if(len(input.shape)>1):
+            fig.add_subplot(n_rows, n_cols, 1)
+            plt.imshow(input[sample,:,:,1], cmap='gray')
+            #plt.imshow(input[sample,:,:,:])
+            plt.title(f"Input[{sample}]")
+        for i in range(1, n_channels+1):
+            fig.add_subplot(n_rows, n_cols, i+m_one)
+            plt.imshow(output[sample,:,:,i-1], cmap='gray')
+            plt.title(f"channel {i-1}")
+        fig.suptitle(f"layer {layer}")
+        #plt.show() needs to be included in main script, allowing multiple layers to be displayed at once.
+
+    def plot_kernels(self,layer,channel):
+
+        kernels = self.layers[layer].F[:,:,:,channel]
+        n_filters = self.layers[layer].n_filters
+        a = n_filters
+        #Make appropriate number of subplots
+        n_cols = int(np.ceil(np.sqrt(a)))
+        n_rows =int(np.ceil(a/n_cols))
+
+        fig = plt.figure(figsize=(n_rows, n_cols))
+        # plt.title("hey")
+        for f in range(0, n_filters):
+            fig.add_subplot(n_rows, n_cols, f+1)
+            plt.imshow(kernels[f,:,:], cmap='gray')
+            plt.title(f"filter {f}")
+        fig.suptitle(f"layer {layer}, channel {channel}")
+        #plt.show() needs to be included in main script, allowing multiple layers to be displayed at once.
 
 # #Classical way. X.shape = [n_inputs, n_features]
 # #Here the weights are indexed with rows corresponding to the neurons of the previous layer and columns corresponding to nodes of the current layer
