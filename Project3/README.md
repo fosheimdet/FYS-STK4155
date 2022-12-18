@@ -1,2 +1,2 @@
-# Project 3: Image Analysis using Convolutional Neural Networks
+# Project 3: Image Classification using Convolutional Neural Networks
 
