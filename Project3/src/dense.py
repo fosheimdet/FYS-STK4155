@@ -20,10 +20,19 @@ class Dense:
         self.delta = None
         self.n_param = None
 
-    def initialize(self,shape_prev): #Construct the weights and biases based on the shape of the input
+    def initialize(self,shape_prev,scheme=None): #Construct the weights and biases based on the shape of the input
         n_features = shape_prev[0] #original shape before pruning: (n_samples,n_features)
-        self.W = np.random.normal(0,1,(n_features,self.n_l)) #Initialize using normal distribution
-        self.b = np.repeat(0.01,self.n_l) #Will be automatically "reshaped" by numpy to a matrix in vector-matrix addition
+
+        n_prev = np.prod(shape_prev) #Number of nodes in previous layer
+        var=1 #Variance of gaussian used for initializing weights
+        if(scheme=="Xavier"):
+            var = 1/n_prev
+        elif(scheme=="He"):
+            var = 2/n_prev
+        self.W = np.random.normal(0,1/var,(n_features,self.n_l))
+        self.b = np.repeat(0.0,self.n_l)
+        # self.W = np.random.normal(0,1,(n_features,self.n_l)) #Initialize using normal distribution
+        # self.b = np.repeat(0.01,self.n_l) #Will be automatically "reshaped" by numpy to a matrix in vector-matrix addition
         self.n_param = np.prod(self.W.shape)+len(self.b)
 
         self.shape = (self.n_l,)
@@ -47,3 +56,7 @@ class Dense:
     def update(self,A_prev,eta,lmbd):
         self.W -= eta*(A_prev.T@self.delta +lmbd*self.W)
         self.b -= eta*(np.ones(self.delta.shape[0])@self.delta + lmbd*self.b)
+
+    def info(self):
+        act_name = self.act.__name__
+        return f'({self.n_l},{act_name})'

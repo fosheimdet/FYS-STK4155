@@ -46,11 +46,17 @@ sigmoidL = [sigm,derSigm]
 def relu(x):
     return np.maximum(0,x) #If k is a vector or a matrix, the elementwise maximum will be taken
 
-
 def derRelu(x):
     return np.heaviside(x,0) #Here the second parameter specifies what to return when the first argument is 0
     #return np.where(x <= 0, 0, 1)
 reluL = [relu,derRelu]
+
+# def ReLU(x):
+#     return x * (x > 0)
+#
+# def dReLU(x):
+#     return 1. * (x > 0)
+# reluL = [ReLU,dReLU]
 
 #Leaky relu
 def leakyRelu(x):

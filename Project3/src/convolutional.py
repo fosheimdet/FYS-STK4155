@@ -5,14 +5,14 @@ from scipy import signal
 
 
 
-class Conv2D:
-    def __init__(self,n_filters,shape_kernel,actL, padding="same"):
+class Conv:
+    def __init__(self,n_filters,shape_kernel,actL, padding="same", p=None):
         self.n_filters = n_filters
         self.k = shape_kernel[0] #For now only using square, even-sized kernels
         self.act = actL[0] #Actiation function
         self.d_act = actL[1] #Its derivative
         self.pad_mode = padding #Valid or same padding
-        self.p = None  #Padding size to be used on input from previous layer
+        self.p = p  #Padding size to be used on input from previous layer
 
 
 
@@ -24,12 +24,20 @@ class Conv2D:
         self.delta = None #"Errors"
         self.n_param = None #Only used for printing the network
 
-    def initialize(self,shape_prev):
+    def initialize(self,shape_prev, scheme=None):
         self.shape_prev = shape_prev #Shape of activations of previous layer (excluding sample axis)
         n_channels = shape_prev[-1] #Number of feature maps
 
-        self.F = np.random.normal(0,1,(self.n_filters,self.k,self.k,n_channels))
-        self.b = 0.01*np.ones(self.n_filters)
+        n_prev = np.prod(shape_prev) #Number of nodes in previous layer
+
+        var=1 #Variance of gaussian used for initializing weights
+        if(scheme=="Xavier"):
+            var = 1/n_prev
+        elif(scheme=="He"):
+            var = 2/n_prev
+        self.F = np.random.normal(0,var,(self.n_filters,self.k,self.k,n_channels))
+        self.b = 0.0*np.ones(self.n_filters)
+        # self.b = 0.01*np.ones(self.n_filters)
         self.n_param = np.prod(self.F.shape) + self.n_filters
 
         if(self.pad_mode == "valid"):
@@ -40,6 +48,8 @@ class Conv2D:
         elif(self.pad_mode == "full"):
             # self.p = 2*self.r
             self.p = self.k-1
+        elif(self.pad_mode == "custom"):
+            self.p = self.p
 
         Height_p,Width_p = shape_prev[0:2]
         Height = 1 + Height_p - self.k + 2*self.p
@@ -103,13 +113,9 @@ class Conv2D:
 
         return (grad_F,grad_b) #For testing our implementation via finitie differences
 
-        # self.F -= eta*(Delta_F + lmbd*self.F)
-        # self.B -=
-        #
-        # DK = np.zeros(self.K.shape)
-        #
-        # for n in range(A_p.shape[0]):
-        #     DK+= signal.correlate2d(A_p_padded[n,:,:],self.delta[n,:,:],"valid")
-        #
-        # self.K -= eta*(DK + lmbd*self.K)
-        # self.B -= eta*(np.sum(self.delta) + lmbd*self.B)
+
+    def info(self):
+        #Conv(16,(5,5),act,padding="valid")
+        act_name=self.act.__name__
+
+        return f'({self.n_filters},({self.k},{self.k}),{act_name},"{self.pad_mode}")'

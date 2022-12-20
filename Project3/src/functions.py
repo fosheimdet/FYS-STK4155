@@ -1,30 +1,57 @@
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
-# #Plots the feature maps of a convolutional layer. The input can
-# #be provided as an optional argument for comparison.
-# def plot_FMs(output,input = np.array([0])):
-#     m_one = 0 #No added subplot if no input is provided
-#     if(len(input.shape)>1):
-#         m_one = 1
-#     n_channels = output.shape[-1]
-#     a = m_one+output.shape[-1]
-#     n_cols = int(np.ceil(np.sqrt(a)))
-#     n_rows =int(np.ceil(a/n_cols))
-#
-#     fig = plt.figure(figsize=(n_rows, n_cols))
-#     if(len(input.shape)>1):
-#         fig.add_subplot(n_rows, n_cols, 1)
-#         plt.imshow(input[:,:,0], cmap='gray')
-#         #plt.imshow(input[:,:,0])
-#         plt.title("Input")
-#     for i in range(1, n_channels+1):
-#     #     img = np.random.randint(10, size=(h,w))
-#         fig.add_subplot(n_rows, n_cols, i+m_one)
-#         plt.imshow(output[:,:,i-1], cmap='gray')
-#         #plt.imshow(output[:,:,i-1])
-#         plt.title(f"Channel {i-1}")
-#     plt.show()
+
+#Splits data into number of desired partitions. Discards the remainder.
+def partition_data(X,n_part, reverse=False):
+    #Partition dataset
+    if(reverse==False):
+        n = X.shape[0]
+        remainder = n%n_part
+        p_size = n//n_part
+        #Store partitions along new axis
+        Xp = np.zeros((n_part,p_size)+X.shape[1:])
+        for p in range(n_part):
+            start=p*p_size
+            end = (p+1)*p_size
+            Xp[p,:] = X[np.newaxis,start:end]
+
+        return Xp
+    #un-partition dataset
+    elif(reverse==True):
+        Xp = X
+        p_size = Xp.shape[1]
+        X_orig = np.zeros((n_part*p_size,)+Xp.shape[2:])
+        for p in range(n_part):
+            X_orig[p*p_size:(p+1)*p_size] = Xp[p]
+    return X_orig
+
+# def partition_dataset(X,y,n_part):
+#     return partition_data(X,n_part),partition_data(y,n_part)
+
+#Reshape from (n_samples,n_features) as used by DNN to (n_samples,image_shape,n_channels)
+def reshape_imgs(X_train,X_test,shape):
+    Height,Width,n_channels = shape
+    n_tr, n_te= X_train.shape[0], X_test.shape[0]
+    n_feat = X_train.shape[1]
+    X_tr,X_te = np.zeros((n_tr,Height,Width,n_channels)), np.zeros((n_te,Height,Width,n_channels))
+    for c in range(n_channels):
+        for n in range(n_tr):
+            X_tr[n,:,:,c] = X_train[n,c*Height*Width:(c+1)*Height*Width].reshape(Height,Width)
+        for n in range(n_te):
+            X_te[n,:,:,c] = X_test[n,c*Height*Width:(c+1)*Height*Width].reshape(Height,Width)
+    return X_tr,X_te
+
+#Assumes one-hot encoded output and targets
+def confusion_matrix(predictions,targets):
+    n_categories = targets.shape[1]
+    conf_matrix = np.zeros((n_categories,n_categories))
+    n_samples = predictions.shape[0]
+    for n in range(n_samples):
+        conf_matrix[ np.argmax(predictions[n,:]) , np.argmax(targets[n,:]) ]+= 1.0
+    for c in range(n_categories):
+        conf_matrix[:,c] = conf_matrix[:,c]/np.sum(conf_matrix[:,c]) #Divide by number of predictions for each category
+    return conf_matrix
 
 
 #"valid" 2d cross correlation

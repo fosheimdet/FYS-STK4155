@@ -2,11 +2,11 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 
 import seaborn as sns
 import time
 from scipy import signal
-from sklearn import datasets as sk_datasets
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import matplotlib.image as img
@@ -14,152 +14,333 @@ from PIL import Image
 import keras
 import tensorflow as tf
 from tensorflow.keras import layers, models
+from tensorflow.keras import datasets as tf_datasets
+from sklearn import datasets as sk_datasets
 
 from neural_network import CNN
 from dense import Dense
-from convolutional import Conv2D
+from convolutional import Conv
 from flatten import Flatten
 from max_pool import MaxPool
 from functions import scale_data, accuracy, to_categorical_numpy, cross_corr
-from activation_functions import noActL, sigmoidL, reluL, tanhL, softmaxL
+from functions import confusion_matrix, reshape_imgs, partition_data
+from activation_functions import noActL, sigmoidL, reluL, leakyReluL, tanhL, softmaxL
 from finite_diff import fd_kernel,fd_biases
+from reformat_data import format_mnist8x8,format_mnist,format_svhn
 
 
-
-# #Prepare data
-def preprocess(classification_dataset,images=True, biases = False):
-    X = classification_dataset.data
-    if(images):
-        X = classification_dataset.images
-    y = classification_dataset.target
-    print("X.shape:", X.shape, ", y.shape:", y.shape)
-    if(biases):
-        n_inputs = X.shape[0]
-        n_features = X.shape[1]
-        #Add a one column to the design matrix
-        one_col = np.ones((n_inputs,1))
-        X = np.concatenate((one_col, X), axis = 1 )
-
-    y = to_categorical_numpy(y) #One-hot encode the labels
-
-    return X,y
-
-
-
-#Prepare data
-def preprocess_images(X,y):
-    #Assumes X.shape = (n_inputs,Height,Width,n_channels) or
-    #        datasetsX.shape = (n_inputs,n_channels,Height,Width) <---used by our CNN
-    X = X/255.0
-    y = to_categorical_numpy(y)
-    assert(len(X.shape)>=3)
-    if(len(X.shape)==3):
-        X = X[:,:,:,np.newaxis]
-
-    return X,y
-
-
-
-
-# dataset = datasets.load_digits()  #Dowload MNIST dataset (8x8 pixelss)
-# X,y = preprocess(dataset,images=False,biases=False)
-# X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2)
-# X_train, X_test = scale_data(X_train,X_test)
-
-##============Hyperparameters=====================
-epochs = 1
-M = 20
-eta = 0.01
-lmbd = 1e-4
-
-gridsearchBool = False
-
-hyperparams = [epochs,M,eta,lmbd]
-
-##===================================================================================
-#                               Model assessment
-##===================================================================================
+def get_data(dataset):
+    if(dataset=="MNIST"):
+        return format_mnist() #Hand-written digits, 28x28
+    elif(dataset=="MNIST8x8"):
+        return format_mnist8x8() #Hand-written digits, 8x8
+    elif(dataset=="SVHN"):
+        return format_svhn() #Housing numbers, 32x32
 
 np.random.seed(0)
-
-from tensorflow.keras import layers, models
-from tensorflow.keras import datasets as tf_datasets
-
-# # (train_images, train_labels), (test_images, test_labels) = datasets.cifar10.load_data()
-# # print(train_images.shape, test_images.shape)
-# # print(train_labels.shape, test_labels.shape)
-# (X_train, y_train), (X_test,y_test) = tf_datasets.cifar10.load_data()
-#
-# # X_train,y_train = preprocess_images(X_train,y_train)
-# targets = to_categorical_numpy(y_train[0:10])
-
-dataset = sk_datasets.load_digits() #Dowload MNIST dataset (8x8 pixels)
-X,y = dataset.images,dataset.target
-print(X.shape)
-X,y = preprocess_images(X,y) #Adds a dimension to X
-print(X.shape)
-X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2)
+##===================================================================================
+#                              Data preprocessing
+##===================================================================================
+dataset="MNIST"
+X_train,X_test,y_train,y_test = get_data(dataset)
+#Scale data:
+X_train,X_test = X_train/255.0, X_test/255.0
 
 
-input = X_train[0:2]
-print("input: ")
-print(input.shape)
-targets = y_train[0:2]
-print("X_train shape: ", X_train.shape)
-# model = CNN(X.shape)
+##========================Models=============================
+
+##================Shallow DNN ====================
+shallow_dense = CNN(X_train.shape,name="shallow_dense")
+shallow_dense.addLayer( Flatten() )
+shallow_dense.addLayer( Dense(10,reluL) )
+shallow_dense.addLayer( Dense(10,softmaxL) )
+shallow_dense.initialize_network("He")
+##=============Dense Neural Network==============
+act = sigmoidL
+dense_net = CNN(X_train.shape,name="dense_net")
+dense_net.addLayer( Flatten() )
+dense_net.addLayer( Dense(128,act) )
+dense_net.addLayer( Dense(128,act) )
+dense_net.addLayer( Dense(64,act) )
+dense_net.addLayer( Dense(10,softmaxL) )
+dense_net.initialize_network("Xavier")
+##===============================================
+##=================conv1=========================
+conv = CNN(X_train.shape,name="conv2")
+conv.addLayer (Conv(3,(3,3),sigmoidL,"same"))
+# conv1.addLayer( MaxPool((2,2),stride=2, padding="valid") )
+# conv1.addLayer (Conv(6,(3,3),sigmoidL,"same"))
+conv.addLayer( Flatten() )
+conv.addLayer( Dense(30,sigmoidL) )
+conv.addLayer( Dense(128,sigmoidL) )
+conv.addLayer( Dense(10,softmaxL) )
+conv.initialize_network()
+##===============================================
+##=================conv3=========================
+eta=0.1
+conv3 = CNN(X_train.shape,name="conv3")
+conv3.addLayer (Conv(3,(3,3),reluL,"same"))
+conv3.addLayer( MaxPool((2,2),stride=2, padding="valid") )
+# conv1.addLayer (Conv(6,(3,3),sigmoidL,"same"))
+conv3.addLayer( Flatten() )
+conv3.addLayer( Dense(30,sigmoidL) )
+conv3.addLayer( Dense(128,sigmoidL) )
+conv3.addLayer( Dense(10,softmaxL) )
+conv3.initialize_network("Xavier")
+##===============================================
+##================ LeNet-5 ======================
 act = reluL
-model = CNN(input.shape)
-model.addLayer( Conv2D(32,(3,3),act,"same") )
-model.addLayer( Conv2D(32,(3,3),act,"same") )
-model.addLayer( MaxPool((2,2),2,"same") )
-# model.addLayer( Conv2D(64,(3,3),act,"valid") )
-# model.addLayer( Conv2D(64,(3,3),act,"valid") )
-# model.addLayer( MaxPool((2,2),2,"same") )
-# model.addLayer( Conv2D((3,3),3,sigmoidL,"same") )
-# model.addLayer( Conv2D((3,3),sigmoidL,"same") )
-# model.addLayer( Conv2D((3,3),sigmoidL,"same") )
-# model.addLayer( MaxPool((2,2),2,"same") )
-# model.addLayer( Conv2D((3,3),sigmoidL,"same") )
-# model.addLayer( MaxPool((2,2),2,"same") )
-model.addLayer( Flatten() )
-model.addLayer( Dense(10,sigmoidL) )
-model.addLayer( Dense(10,softmaxL) )
+leNet = CNN(X_train.shape,name="LeNet-5")
+leNet.addLayer( Conv(6,(5,5),act,"custom",p=2) ) #Use a padding of 2 to go from 28x28->32x32
+leNet.addLayer( MaxPool((2,2),stride=2, padding="valid") )
+leNet.addLayer( Conv(16,(5,5),act,padding="valid") )
+leNet.addLayer( MaxPool((2,2),stride=2,padding="valid") )
+leNet.addLayer( Conv(120,(5,5),act, "valid") )
+leNet.addLayer( Flatten() )
+leNet.addLayer( Dense(120,act) )
+leNet.addLayer( Dense(86,act) )
+leNet.addLayer( Dense(10,softmaxL) )
+#leNet.initialize_network()
 
-#model.addLayer(Flatten())
-model.initialize_network()
-# output = model.predict(X[0:20])
-t_start = time.time()
-output = model.predict(X_train[0:10])
-t_end = time.time()
-print("Forward prop. time: ", t_end-t_start)
-print("output shape: ", output.shape)
+# define LeNet-5
+# lenet = nn.Sequential()
+# lenet.add_module("conv1", nn.Conv2d(in_channels=1, out_channels=6, kernel_size=5, stride=1, padding=2))
+# lenet.add_module("tanh1", nn.Tanh())
+# lenet.add_module("avg_pool1", nn.AvgPool2d(kernel_size=2, stride=2))
+# lenet.add_module("conv2", nn.Conv2d(in_channels=6, out_channels=16, kernel_size=5, stride=1))
+# lenet.add_module("avg_pool2", nn.AvgPool2d(kernel_size=2, stride=2))
+# lenet.add_module("conv3", nn.Conv2d(in_channels=16, out_channels=120, kernel_size=5,stride=1))
+# lenet.add_module("tanh2", nn.Tanh())
+# lenet.add_module("flatten", nn.Flatten(start_dim=1))
+# lenet.add_module("fc1", nn.Linear(in_features=120 , out_features=84))
+# lenet.add_module("tanh3", nn.Tanh())
+# lenet.add_module("fc2", nn.Linear(in_features=84, out_features=10))
+# print(lenet)
+##=====================================================
+##================Hyperparameters======================
 
-n_samples=10
-# model.backpropagate(y[0:n_samples])
-# model.update(X[0:10],0.01,0)
+
+epochs = 10
+epochs = 100
+M = 128
+M=10
+eta = 0.01
+lmbd = 1e-4
+lmbd = 0
 
 
-fd_kernel(model,0,X[0:n_samples],y[0:n_samples])
-fd_biases(model,0,X[0:n_samples],y[0:n_samples])
-#
-# # finite_diff(model,0,X,y)
-#
-# #model.train(X_train[0:50],y_train[0:50],hyperparams)
-#
-#
-# y_pred = model.predict(X_test[0:5])
-# print(y_pred.shape)
-#
-# n_categories = y_pred.shape[1]
-# print("n_categories:", n_categories)
-# conf_matrix = np.zeros((n_categories,n_categories))
-#
-# for n in range(y_pred.shape[1]):
-#     conf_matrix[ np.argmax(y_test[n,:]) , np.argmax(y_pred[n,:]) ]+= 1/y_pred.shape[1]
-#
-# print(conf_matrix.shape)
-# print(conf_matrix)
-#
+hyperparams = [epochs,M,eta,lmbd]
+n_train = X_train.shape[0]
+n_test = X_test.shape[0]
+#Partition/split datasets to circumvent memory limitations
+n_part_train = 5
+n_part_test = 2
+write_to_file = True #Write model and its test accuracy to file
+
+model_assessment = False
+model_selection = True
+
+##=====================================================
+##======Pick model for training/testing================
+model = leNet
+model = conv
+model = conv3
+model = dense_net
+# epochs,M,eta,lmbd = 10,128,0.01,1e-4
+# epochs,M,eta,lmbd = 150,20,0.01,1e-4
+epochs,M,eta,lmbd = 10,128,1e-3,1e-3
+# model=shallow_dense
+# epochs,M,eta,lmbd = 150,20,0.01,1e-3
+
+hyperparams = [epochs,M,eta,lmbd]
+print("Using",model.name)
+# model.initialize_network()
+print(model.summary())
+##=====================================================
+##=====================================================
+
+# def model_assessment(model,data,hyperparams,n_part):
+
+if(model_assessment==True):
+    ##=====================================================
+    ##==================== Training =======================
+    def partition_dataset(X,y,n_part):
+        return partition_data(X,n_part),partition_data(y,n_part)
+    print("===========================Training======================================")
+
+
+    X_train,y_train = X_train[0:n_train],y_train[0:n_train]
+    X_train,X_val,y_train,y_val = train_test_split(X_train,y_train,test_size=0.1)
+
+
+    n_part = 1
+
+    Xp_train,yp_train = partition_dataset(X_train,y_train,n_part)
+    acc_vals=[]
+    acc_trains=[]
+    epoch_list=[]
+    for p in range(n_part):
+        print(f"---------------------Training on partition {p}-----------------------------")
+        #These are lists
+        val,train,iters = model.train(Xp_train[p],yp_train[p],hyperparams,X_val,y_val)
+        acc_vals+=val
+        acc_trains+=train
+        iters =(np.array(iters)+p*epochs)/n_part #Convert to actual epoch number
+        epoch_list+=iters.tolist()
+
+    acc_vals,acc_trains,epoch_list = np.array(acc_vals),np.array(acc_trains),np.array(epoch_list)
+
+
+    plt.figure()
+    plt.title(f"Accuracy of '{model.name}' during training on {dataset}.\n" +
+    f"$\eta={eta}$, $\lambda={lmbd}$, epochs={epochs}, batch size={M}")
+    plt.plot(epoch_list,acc_vals, color = 'darkgreen', label = "Validation accuracy")
+    plt.plot(epoch_list,acc_trains, color = 'mediumblue', label = "Training accuracy")
+    plt.xlabel("Epochs")
+    plt.ylabel("Accuracy")
+    plt.minorticks_on()
+    plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.3)
+    plt.tight_layout()
+    plt.legend()
+
+    print("===========================Testing======================================")
+
+    ##====================================================
+    ##==================== Testing =======================
+    X_test,y_test = X_test[0:n_test],y_test[0:n_test]
+
+
+
+    # n_part_train = 10
+    Xp_test,yp_test = partition_dataset(X_test,y_test,n_part)
+    yp_pred= np.zeros(yp_test.shape)
+    for p in range(n_part):
+        yp_pred[p] = model.predict(Xp_test[p])
+
+    #Reverse partitions
+    y_pred = partition_data(yp_pred,n_part,reverse=True)
+
+
+    # output_test = model.predict(X_test[0:p_size])
+    # output_train = model.predict(X_train[0:p_size])
+
+    # conf_train = confusion_matrix(y_tilde,y_train)
+    conf_test = confusion_matrix(y_pred,y_test)
+
+
+    acc_test = accuracy(y_pred,y_test[0:y_pred.shape[0]])
+
+    if(write_to_file==True):
+        #Print accuracy and model used to file
+        model_summary = model.summary() #String
+        filename = "results/"+model.name+".txt"
+        with open(filename,'a') as f:
+            f.write("********************\n")
+            f.write(f"{dataset}\n")
+            f.write(f"Test accuracy={acc_test}\n")
+            f.write("********************\n")
+            f.write(model_summary+"\n")
+
+
+    n_categories = y_test.shape[1]
+    fig, ax = plt.subplots(figsize = (10, 10))
+    sns.heatmap(100*conf_test,xticklabels = np.arange(0,n_categories), yticklabels =np.arange(0,n_categories),
+             annot=True, ax=ax, cmap="rocket", fmt = '.2f',cbar_kws={'format': '%.0f%%'})
+    ax.set_title(f"Confusion Matrix(%) on {dataset}_test with '{model.name}' using Sigmoid act.\n" +
+    f"$\eta={eta}$, $\lambda={lmbd}$, epochs={epochs}, batch size={M}\n Total accuracy: {100*acc_test:.2f}%")
+    ax.set_xlabel("Prediction",size=13)
+    ax.set_ylabel("Label",size=13)
+
+    # fig, ax = plt.subplots(figsize = (10, 10))
+    # sns.heatmap(100*conf_train,xticklabels = np.arange(0,n_categories), yticklabels =np.arange(0,n_categories),
+    #         annot=True, ax=ax, cmap="rocket", fmt = '.2f',cbar_kws={'format': '%.0f%%'})
+    # ax.set_title("Confusion Matrix(%) on MNIST training data using DNN with SGD \n" +
+    # f"epochs={epochs}, batch size={M}\n Total accuracy: {100*acc_train:.2f}%")
+    # ax.set_xlabel("Prediction")
+    # ax.set_ylabel("label")
+    plt.show()
+
+
+
+if(model_selection==True):
+    ##===================================================================================
+    #                               Model selection
+    #===================================================================================
+    epoch_vals= [50,80,100,150,200,250]      #Epochs
+    M_vals = [10,20,50,80,100]             #Batch_sizes
+    epoch_vals= [1,3,5,10]
+    M_vals = [1,3,5,10]
+    # eta_vals dataset="MNIST"
+
+    # lmbd_vals = np.logspace(-6, 0, 7)
+    # eta_vals = np.logspace(-2, -1, 2)
+    # lmbd_vals = np.logspace(-2, -1, 2)
+    eta_vals = [0.0005,0.001,0.005,0.01,0.02]
+    eta_vals = [0.005,0.01,0.02,0.1,0.2]
+    lmbd_vals = [0.0001,0.0005,0.001,0.005]
+
+    valList = [epoch_vals,  M_vals, eta_vals,  lmbd_vals] #List containing values we want to loop over
+    iterableStr = ['epochs','batch size','eta','lambda']
+                #       0        1         2       3
+    itIndices=[2,3]
+    iterable1 = valList[itIndices[0]]
+    iterable2 = valList[itIndices[1]]
+
+    acc_test = np.zeros((len(iterable1), len(iterable2)))
+    acc_train= np.zeros((len(iterable1), len(iterable2)))
+
+    # X_train, y_train = X_train[0:50], y_train[0:50]
+
+    for i, it1 in enumerate(iterable1):
+        for j, it2 in enumerate(iterable2):
+            #Set the pertinent elements of hyperparams
+            hyperparams[itIndices[0]] = it1
+            hyperparams[itIndices[1]] = it2
+            epochs,M,eta,lmbd =hyperparams
+            hyperparams = [epochs,M,eta,lmbd]
+
+            model.initialize_network() #Needed to reset the weights
+            model.train(X_train,y_train,hyperparams,verbose=False)
+
+            y_pred = model.predict(X_test)
+            y_tilde = model.predict(X_train)
+
+            acc_train[i,j] = accuracy(y_tilde,y_train)
+            acc_test[i,j] = accuracy(y_pred,y_test)
+
+    #Create list of indices of the hyperparameters not looped over (to be used in title)
+    indices_not = [x for x in range(len(iterableStr))]
+    indices_not.remove(itIndices[0])
+    indices_not.remove(itIndices[1])
+    titleStr=''
+    for i in range(len(indices_not)):
+        if(i>0):
+            titleStr+=", "
+        titleStr+=f"{iterableStr[indices_not[i]]}={hyperparams[indices_not[i]]}"
+
+
+    fig, ax = plt.subplots(figsize = (10, 10))
+    sns.heatmap(100*acc_test,xticklabels = iterable2, yticklabels =iterable1,
+             annot=True, ax=ax, cmap="rocket", fmt = '.2f',cbar_kws={'format': '%.0f%%'})
+    ax.set_title(f"Test accuracy(%) on {dataset} data using '{model.name}' with Sigmoid\n" +
+    titleStr)
+
+    ax.set_xlabel(iterableStr[itIndices[1]])
+    ax.set_ylabel(iterableStr[itIndices[0]])
+
+
+    fig, ax = plt.subplots(figsize = (10, 10))
+    sns.heatmap(100*acc_train,xticklabels = iterable2, yticklabels =iterable1,
+            annot=True, ax=ax, cmap="rocket", fmt = '.2f',cbar_kws={'format': '%.0f%%'})
+    ax.set_title(f"Training accuracy(%) on {dataset} data using '{model.name}' with Sigmoid\n" +
+    titleStr)
+    ax.set_xlabel(iterableStr[itIndices[1]])
+    ax.set_ylabel(iterableStr[itIndices[0]])
+    plt.show()
+
+
+
+
 # # sample = 1
 # # layer=0
 # # model.plot_FMs(layer,sample,X_train)
@@ -199,56 +380,3 @@ fd_biases(model,0,X[0:n_samples],y[0:n_samples])
 #
 # print("acc_train: ", acc_train)
 # print("acc_test: ", acc_test)
-
-##================================== Keras =========================================
-
-
-##===================================================================================
-#                               Model selection
-##===================================================================================
-#
-# eta_vals = np.logspace(-5, 1, 7)
-# lmbd_vals = np.logspace(-6, 0, 7)
-# # eta_vals = np.logspace(-2, -1, 2)
-# # lmbd_vals = np.logspace(-2, -1, 2)
-# acc_train = np.zeros((len(lmbd_vals), len(eta_vals)))
-# acc_test = np.zeros((len(lmbd_vals), len(eta_vals)))
-# gridsearchBool = False
-#
-# model = CNN(X_train.shape)
-# model.addLayer( Conv2D((3,3),sigmoidL,"same") )
-# model.addLayer( Flatten() )
-# model.addLayer( Dense(y.shape[1],softmaxL) )
-# if(gridsearchBool):
-#     for i,eta in enumerate(eta_vals):
-#         for j,lmbd in enumerate(lmbd_vals):
-#             hyperparams = [epochs,M,eta,lmbd]
-#
-#             model.initialize_network() #Needed to reset the weights
-#             model.train(X_train,y_train,hyperparams)
-#
-#             y_pred = model.predict(X_test)
-#             y_tilde = model.predict(X_train)
-#
-#             # theta_opt = logistic(X_train,y_train,epochs,M,eta,lmbd,gamma,False)
-#             # y_pred = np.floor(softmax(X_test@theta_opt)+0.5)
-#             # y_tilde = np.floor(softmax(X_train@theta_opt)+0.5)
-#             acc_train[i,j] = accuracy(y_tilde,y_train)
-#             acc_test[i,j] = accuracy(y_pred,y_test)
-#
-#     fig, ax = plt.subplots(figsize = (10, 10))
-#     sns.heatmap(100*acc_test,xticklabels = lmbd_vals, yticklabels =eta_vals,
-#              annot=True, ax=ax, cmap="rocket", fmt = '.2f',cbar_kws={'format': '%.0f%%'})
-#     ax.set_title("Test accuracy(%) on MNIST data using CNN with SGD\n" +
-#     f"epochs={epochs}, batch size={M}")
-#     ax.set_xlabel("$\lambda$")
-#     ax.set_ylabel("$\eta$")
-#
-#     fig, ax = plt.subplots(figsize = (10, 10))
-#     sns.heatmap(100*acc_train,xticklabels = lmbd_vals, yticklabels =eta_vals,
-#             annot=True, ax=ax, cmap="rocket", fmt = '.2f',cbar_kws={'format': '%.0f%%'})
-#     ax.set_title("Training accuracy(%) on MNIST data using CNN with SGD \n" +
-#     f"epochs={epochs}, batch size={M}")
-#     ax.set_xlabel("$\lambda$")
-#     ax.set_ylabel("$\eta$")
-#     plt.show()

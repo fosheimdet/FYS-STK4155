@@ -16,11 +16,11 @@ class MaxPool():
         self.delta = None
         self.max_coord = None  #Matrix containing location of the max values. Same shape as pooled matrix.
 
+        self.n_param = 0
 
-    def initialize(self,shape_prev):
+    def initialize(self,shape_prev, scheme=None):
         self.shape_prev = shape_prev
         Height_p,Width_p,n_channels = shape_prev
-        print("shape_prev<max>:",shape_prev)
         # Height_p = shape_prev[1]
         # Width_p = shape_prev[2]
         # n_channels = shape_prev[-1]
@@ -131,19 +131,42 @@ class MaxPool():
     def update(self,*args):
         return None
 
+    def info(self):
+        pool_size=self.pool_size
+        stride=self.stride
+        padding =self.padding
+        return f'({pool_size,pool_size},{stride},"{padding}")'
+
+
 if __name__ == "__main__":
-    a = np.arange(0,20)
-    A = a.reshape(5,4)
-    A = np.random.randint(0,20,(3,4))
-    A = A[np.newaxis,:]
 
 
-    pool_shape = (3,3)
-    stride = 1
-    print("pool_size: ", pool_shape[0])
-    print("stride: ", stride)
-    max = MaxPool(pool_shape,stride,"valid")
-    max.initialize(A.shape[1:])
-    output = max.feedForward(A)
 
-    max.backpropagate(output)
+
+    sum_str = ''
+    sum_str+="A: \n"
+    sum_str+="----------------------------------------------------\n"
+    sum_str+="Layer            Output shape            #Params  \n"
+    sum_str+="====================================================\n"
+    print(sum_str)
+
+    string = "My string"
+    filename="ok.txt"
+    with open('bla.txt','a') as f:
+        f.write("\n"+sum_str+"\n")
+    # with open('bla.txt', 'w') as f:
+    #     print('Filename:', filename, file=f)
+    #
+    # a = np.arange(0,20)
+    # A = a.reshape(5,4)
+    # A = np.random.randint(0,20,(3,4))
+    # A = A[np.newaxis,:]
+    # pool_shape = (3,3)
+    # stride = 1
+    # print("pool_size: ", pool_shape[0])
+    # print("stride: ", stride)
+    # max = MaxPool(pool_shape,stride,"valid")
+    # max.initialize(A.shape[1:])
+    # output = max.feedForward(A)
+    #
+    # max.backpropagate(output)

@@ -2,6 +2,7 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 
+from functions import accuracy
 from activation_functions import sigmoidL,reluL,leakyReluL, tanhL
 # from layers import Dense
 
@@ -10,7 +11,8 @@ from activation_functions import sigmoidL,reluL,leakyReluL, tanhL
 #input_shape = (n_samples,Height,Width,n_channels) for CNNs
 #and (n_samples,n_features) for DNNs
 class CNN:
-    def __init__(self,input_shape):
+    def __init__(self,input_shape,name="CNN"):
+        self.name = name
         self.shape_features = input_shape[1:]
 
         self.layers = []
@@ -24,25 +26,28 @@ class CNN:
         self.layers[layer].d_act = actL[1]
 
     ##-------------Initialize weights and biases------
-    def initialize_network(self):
+    def initialize_network(self, scheme=None):
         self.L = len(self.layers)
-        self.layers[0].initialize(self.shape_features) #Need to pass the shape of previous layer to construct weights
+        self.layers[0].initialize(self.shape_features, scheme) #Need to pass the shape of previous layer to construct weights
         for l in range(1,self.L):
-            self.layers[l].initialize(self.layers[l-1].shape)
+            self.layers[l].initialize(self.layers[l-1].shape, scheme)
 
 
     ##--------------Make prediction---------------------
     def predict(self, X):
+        # t_start = time.time()
         self.layers[0].feedForward(X)
         for l in range(1,self.L):
             self.layers[l].feedForward(self.layers[l-1].A)
 
+        # t_end = time.time()
+        # print(f"Forward prop. time: {t_end-t_start:.5f}", )
         return self.layers[-1].A
 
 
     def backpropagate(self,y):
         ##----------------backpropagate error--------------------------
-
+        #t_start = time.time()
         AL = self.layers[-1].A
         deltaL = AL-y #Note that we got overflow errors when trying to implement this in the form f'(AL)*(partial C)/(partial AL)
 
@@ -57,19 +62,9 @@ class CNN:
             error = self.layers[l].backpropagate(error_s)
             error_s = error
 
-        ##------------------------------------
-
-        # layL = self.layers[-1]
-        # prod=layL.d_act(layL.A[0,:])*(y[0,:]/layL.A[0,:])
-        # print("AL-y: \n", layL.A[0,:]-y[0,:])
-        # print("f'(AL)*dCdA: \n", prod)
-        #
-        # AL = self.layers[-1].A
-        # error_s = -y/AL
-        #
-        # for l in range(self.L-1,-1,-1):
-        #     error = self.layers[l].backpropagate(error_s)
-        #     error_s = error
+        # t_end = time.time()
+        # print(f"Backpropagation time: {t_end-t_start:.5f}", )
+        return error_s
 
 
 
@@ -80,10 +75,20 @@ class CNN:
             self.layers[l].update(self.layers[l-1].A, eta, lmbd)
 
 
-    def train(self, X_train, y_train, hyperparams):
+    def train(self, X_train, y_train, hyperparams, X_val=None,y_val=None,verbose=True):
         epochs, batch_size, eta, lmbd = hyperparams
-
         n_inputs = X_train.shape[0]
+        #==========Validation stuff==========
+        iter = 0 #Iteration number
+        iter_step =100  #Evaluate every iter_step
+        evalBool = True
+        if(type(X_val)!=type(X_train) or type(y_val)!=type(y_train)):
+            evalBool = False #I.e. perform no evaluations
+
+        acc_val_l,acc_train_l =[],[]
+        epoch_list=[] #Epochs in which the evaluations occured
+        #====================================
+
         indices =np.arange(n_inputs)
         m = int(n_inputs/batch_size)
         t_start = time.time()
@@ -96,34 +101,50 @@ class CNN:
                 self.predict(X_batch)
                 self.backpropagate(y_batch)
                 self.update(X_batch,eta,lmbd)
+
+                if(iter%iter_step==0 and evalBool==True):
+                    y_pred = self.predict(X_val)
+                    y_tilde = self.predict(X_train)
+                    acc_val= accuracy(y_pred,y_val)
+                    acc_train = accuracy(y_tilde,y_train)
+                    acc_val_l.append(acc_val)
+                    acc_train_l.append(acc_train)
+                    epoch_list.append(epoch+i/m)
+                    if(verbose):
+                        print(f"Epoch:{epoch+i/m:.3f} train_acc:{acc_train:.4f}  val_acc:{acc_val:.4f}")
+
+                iter+=1
             t_end_epoch = time.time()
-            print(f"Finished epoch {epoch}/{epochs} in {t_end_epoch-t_start_epoch} s.")
+            if(verbose):
+                print(f"Finished epoch {epoch}/{epochs} in {t_end_epoch-t_start_epoch:.3f} s.")
         t_end = time.time()
-        print(f"Completed training with {epochs} epochs in {t_end-t_start} s.")
-
-
+        print(f"Completed training with {epochs} epochs in {t_end-t_start:.3f} s.")
+        return acc_val_l,acc_train_l,epoch_list
 ##==============================================================================
 ##                     Visualization functions
 ##==============================================================================
     def summary(self,errors=False):
-        print("A: " )
-        print("----------------------------------------------------")
-        print("Layer            Output shape            Param # ")
-        print("====================================================")
-        print('{:19s} {:22s} {}'.format('Input',str(self.shape_features),16))
-        print("----------------------------------------------------")
+        n_tot = 0
+        sum_str = ''
+        sum_str+="----------------------------------------------------------\n"
+        sum_str+="Layer                       Output shape          #Params  \n"
+        sum_str+="==========================================================\n"
+        sum_str+='{:27} {:22s} {}\n'.format('Input',str(self.shape_features),16)
+
         for l in range(self.L):
+            sum_str+="----------------------------------------------------------\n"
             layer = self.layers[l]
-            # print(self.layers[l].A.shape)
-            name = type(layer).__name__
+            name = type(layer).__name__+layer.info()
             shape = str(layer.shape)
             n_params = layer.n_param
-            print('{:19s} {:22s} {}'.format(name,shape,n_params))
-            # print(type(layer).__name__, "\t\t", layer.shape )
-            print("----------------------------------------------------")
+            sum_str+='{:27s} {:22s} {}  \n'.format(name,shape,n_params)
 
-    #Plots the feature maps of a convolutional layer. The input can
-    #be provided as an optional argument for comparison.
+            n_tot+=n_params
+        sum_str+="==========================================================\n"
+        sum_str+=f'Total #parameters: {n_tot}\n'
+        sum_str+="----------------------------------------------------------\n"
+        return sum_str
+
     def plot_FMs(self,layer,sample,input=np.array([0])):
         m_one = 0 # Needs to be one if we want an additional subplot for the input
         if(len(input.shape)>1):
