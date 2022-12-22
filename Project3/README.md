@@ -14,9 +14,9 @@ train_32x32.mat and test_32x32.mat must be dowloaded and included in the same di
 |-----------------------------|-----------------------------------------------------------------------------------------|
 | our_implementation.py                  | Perform training and testing using our implementation only                    |
 | keras_implementation.py                | Perform training and testing using our keras with tensorflow backend           |
-
+|                                                                                                         |
 |model_templates.py                | Pre-defined models to be used by the two above scripts        |
-
+|
 | neura_network.py           | Contains the class CNN, which constructs sequential model from the provided layer instances    |
 | convolutional.py            |Contains a class for convolutional layer    |
 | max_pool.py           |Contain a class for max pool layer |
