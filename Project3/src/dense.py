@@ -48,9 +48,6 @@ class Dense:
 
         return self.delta@self.W.T       #Passing only delta would require that the next layer aquire this layers weights to calculate its delta
 
-    # def backpropagate2(self, delta_s, W_s): #input = delta^{l+1} @ W^{l+1}.T
-    #     self.delta = self.d_act(self.A)*(delta_s@ W_s.T)
-    #     return self.delta        #Passing only delta would require that the next layer aquire this layers weights to calculate its delta
 
 
     def update(self,A_prev,eta,lmbd):

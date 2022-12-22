@@ -38,9 +38,7 @@ class Flatten:
         for n in range(n_samples):
             for c in range(n_channels):
                 self.delta[n,:,:,c] = input[n,c*Height_p*Width_p:(c+1)*Height_p*Width_p].reshape(Height_p,Width_p)
-            # self.delta[i,:,:] = input[i,:].reshape(self.shape_prev)
-        # print("delta<flat>:",self.delta)
-        # print("delta_shape<flat>:", self.delta.shape)
+
         return self.delta
 
     def update(self,eta,lmbd,A_p):

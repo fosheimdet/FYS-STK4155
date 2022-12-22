@@ -3,17 +3,14 @@ import numpy as np
 from scipy import signal
 
 
-
-
 class Conv:
-    def __init__(self,n_filters,shape_kernel,actL, padding="same", p=None):
+    def __init__(self,n_filters,shape_kernel,actL, padding="same", p=0):
         self.n_filters = n_filters
         self.k = shape_kernel[0] #For now only using square, even-sized kernels
         self.act = actL[0] #Actiation function
         self.d_act = actL[1] #Its derivative
         self.pad_mode = padding #Valid or same padding
         self.p = p  #Padding size to be used on input from previous layer
-
 
 
         self.shape = None      #Shape of this layer, (Height,Width,n_filters)
@@ -115,7 +112,6 @@ class Conv:
 
 
     def info(self):
-        #Conv(16,(5,5),act,padding="valid")
         act_name=self.act.__name__
 
         return f'({self.n_filters},({self.k},{self.k}),{act_name},"{self.pad_mode}")'

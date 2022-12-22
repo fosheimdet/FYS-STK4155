@@ -9,7 +9,7 @@ import seaborn as sns
 ##==============================================================================
 ##=========================== Uses our own models ==============================
 ##==============================================================================
-def evaluate_fit(model,data,hyperparams,data_name,val_size=0.1):
+def evaluate_fit(model,data,data_name,val_size=0.1):
     ##=====================================================
     ##==================== Training =======================
     def partition_dataset(X,y,n_part):
@@ -17,14 +17,14 @@ def evaluate_fit(model,data,hyperparams,data_name,val_size=0.1):
     print("===========================Training======================================")
     #Unpack arguments
     X_train,X_test,y_train,y_test = data
-    epochs,M,eta,lmbd = hyperparams
+    epochs,M,eta,lmbd = model.epochs,model.batch_size,model.eta,model.lmbd
 
     #Allocate validation set from training
     X_train,X_val,y_train,y_val = train_test_split(X_train,y_train,test_size=val_size)
 
     #Number of partitions needed
     n_part_train = 1
-    n_part_test = 1
+    n_part_test =1
 
     Xp_train,yp_train = partition_dataset(X_train,y_train,n_part_train)
     acc_vals=[]
@@ -34,7 +34,7 @@ def evaluate_fit(model,data,hyperparams,data_name,val_size=0.1):
     for p in range(n_part_train):
         print(f"---------------------Training on partition {p}-----------------------------")
         #These are lists
-        val,train,iters,t_part = model.train(Xp_train[p],yp_train[p],hyperparams,X_val,y_val)
+        val,train,iters,t_part = model.train(Xp_train[p],yp_train[p],X_val,y_val)
         # val,train,iters = model.train(Xp_train[p],yp_train[p],hyperparams)
         t_train+=t_part
         acc_vals+=val
@@ -49,8 +49,8 @@ def evaluate_fit(model,data,hyperparams,data_name,val_size=0.1):
     plt.figure()
     plt.title(f"Running accuracy of our '{model.name}' during training on {data_name}.\n" +
     f"$\eta={eta}$, $\lambda={lmbd}$, epochs={epochs}, batch size={M}")
-    plt.plot(epoch_list,acc_vals, color = 'darkgreen', label = f"Val. acc. Max: {val_max:.3f}")
-    plt.plot(epoch_list,acc_trains, color = 'mediumblue', label = f"Train. acc. Max: {train_max:.3f}")
+    plt.plot(epoch_list,acc_vals, linestyle='-', color = 'darkgreen', label = f"Val. acc. Max: {val_max:.3f}")
+    plt.plot(epoch_list,acc_trains, linestyle='--', color = 'mediumblue', label = f"Train. acc. Max: {train_max:.3f}")
     plt.xlabel("Epochs")
     plt.ylabel("Accuracy")
     plt.minorticks_on()
@@ -98,7 +98,7 @@ def evaluate_fit(model,data,hyperparams,data_name,val_size=0.1):
     fig, ax = plt.subplots(figsize = (10, 10))
     sns.heatmap(100*conf_test,xticklabels = np.arange(0,n_categories), yticklabels =np.arange(0,n_categories),
              annot=True, ax=ax, cmap="rocket", fmt = '.2f',cbar_kws={'format': '%.0f%%'})
-    ax.set_title(f"Confusion Matrix(%) on {data_name}_test with '{model.name}' using Sigmoid act.\n" +
+    ax.set_title(f"Confusion Matrix(%) on {data_name}_test with '{model.name}'.\n" +
     f"$\eta={eta}$, $\lambda={lmbd}$, epochs={epochs}, batch size={M}\n Total accuracy: {100*acc_test:.2f}%")
     ax.set_xlabel("Prediction",size=13)
     ax.set_ylabel("Label",size=13)
@@ -116,13 +116,13 @@ def evaluate_fit(model,data,hyperparams,data_name,val_size=0.1):
 
 
 
-def gridsearch(model,data,hyperparams,data_name,iterable1_prov=[],iterable2_prov=[]):
+def gridsearch(model,data,data_name,iterable1_prov=[],iterable2_prov=[]):
     ##===================================================================================
     #                               Model selection
     #===================================================================================
     print("===========================Gridsearch======================================")
     X_train,X_test,y_train,y_test = data
-    epochs,M,eta,lmbd = hyperparams
+    hyperparams=[epochs,M,eta,lmbd]=[model.epochs,model.batch_size,model.eta,model.lmbd]
 
     epoch_vals= [50,80,100,150,200,250]      #Epochs
     M_vals = [10,20,50,80,100]             #Batch_sizes
@@ -163,11 +163,10 @@ def gridsearch(model,data,hyperparams,data_name,iterable1_prov=[],iterable2_prov
             #Set the pertinent elements of hyperparams
             hyperparams[itIndices[0]] = it1
             hyperparams[itIndices[1]] = it2
-            epochs,M,eta,lmbd =hyperparams
-            hyperparams = [epochs,M,eta,lmbd]
 
-            model.initialize_network() #Needed to reset the weights
-            model.train(X_train,y_train,hyperparams,verbose=False)
+            model.initialize_weights(X_train.shape) #Needed to reset the weights
+            model.set_hyperparams(hyperparams)
+            model.train(X_train,y_train,verbose=False)
 
             y_pred = model.predict(X_test)
             y_tilde = model.predict(X_train)
@@ -189,7 +188,7 @@ def gridsearch(model,data,hyperparams,data_name,iterable1_prov=[],iterable2_prov
     fig, ax = plt.subplots(figsize = (10, 10))
     sns.heatmap(100*acc_test,xticklabels = iterable2, yticklabels =iterable1,
              annot=True, ax=ax, cmap="rocket", fmt = '.2f',cbar_kws={'format': '%.0f%%'})
-    ax.set_title(f"Test accuracy(%) on {data_name} data using '{model.name}' with Sigmoid\n" +
+    ax.set_title(f"Test accuracy(%) on {data_name} data using '{model.name}'.\n" +
     titleStr)
 
     ax.set_xlabel(iterableStr[itIndices[1]])
@@ -211,17 +210,26 @@ def gridsearch(model,data,hyperparams,data_name,iterable1_prov=[],iterable2_prov
 ##==============================================================================
 
 def plot_accuracy_keras(model,hyperparams,data_name):
-  epochs,M,eta = hyperparams
-  lmbd = 0
+  epochs,M,eta,lmbd = hyperparams
+  # lmbd = 0
   history = model.history
 
-  print(history.history.keys())
+  val_accuracies = history.history['val_accuracy']
+  val_max = np.max(val_accuracies)
+  # print("val_accuracies: ",val_accuracies)
+  # print("val_accuracies.type:",type(val_accuracies))
+  # print("val_accuracies.shape: ",val_accuracies.shape)
+  train_accuracies = history.history['accuracy']
+  train_max = np.max(train_accuracies)
+  # print(history.history.keys())
 
   plt.figure()
   plt.title(f"Running accuracy of '{model.name}' during training on {data_name}.\n" +
-  f"$\eta={eta}$,$\lambda={lmbd}$, epochs={epochs}, batch size={M}")
-  plt.plot(history.history['accuracy'], color =  'mediumblue', label = "Training accuracy")
-  plt.plot(history.history['val_accuracy'], color = 'darkgreen', label ="Validation accuracy")
+  f"$\eta={eta}$, epochs={epochs}, batch size={M}")
+  plt.plot(train_accuracies, linestyle='--',
+  color =  'mediumblue', label = f"Val. acc. Max: {val_max:.3f}")
+  plt.plot(history.history['val_accuracy'],  linestyle='-',
+  color = 'darkgreen',  label = f"Train. acc. Max: {train_max:.3f}")
   plt.xlabel("Epochs")
   plt.ylabel("Accuracy")
   plt.minorticks_on()
@@ -232,9 +240,10 @@ def plot_accuracy_keras(model,hyperparams,data_name):
   # plt.show()
 
 
+
 def confusion_matrix_keras(model,X_test,y_test,hyperparams,data_name):
-    epochs,M,eta = hyperparams
-    lmbd = 0
+    epochs,M,eta,lmbd = hyperparams
+    # lmbd = 0
 
     y_pred = model.predict(X_test)
     conf_test = confusion_matrix(y_pred,y_test)
@@ -244,8 +253,8 @@ def confusion_matrix_keras(model,X_test,y_test,hyperparams,data_name):
     fig, ax = plt.subplots(figsize = (10, 10))
     sns.heatmap(100*conf_test,xticklabels = np.arange(0,n_categories), yticklabels =np.arange(0,n_categories),
            annot=True, ax=ax, cmap="rocket", fmt = '.2f',cbar_kws={'format': '%.0f%%'})
-    ax.set_title(f"Confusion Matrix(%) on {data_name}_test with '{model.name}' using Sigmoid act.\n" +
-    f"$\eta={eta}$, $\lambda={lmbd}$, epochs={epochs}, batch size={M}\n Total accuracy: {100*acc_test:.2f}%")
+    ax.set_title(f"Confusion Matrix(%) on {data_name}_test with '{model.name}' \n" +
+    f"$\eta={eta}$, epochs={epochs}, batch size={M}\n Total accuracy: {100*acc_test:.2f}%")
     ax.set_xlabel("Prediction",size=13)
     ax.set_ylabel("Label",size=13)
 

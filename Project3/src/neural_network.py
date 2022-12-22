@@ -8,15 +8,20 @@ from activation_functions import sigmoidL,reluL,leakyReluL, tanhL
 
 
 
+
 #input_shape = (n_samples,Height,Width,n_channels) for CNNs
 #and (n_samples,n_features) for DNNs
 class CNN:
-    def __init__(self,input_shape,name="CNN"):
+    def __init__(self,name="CNN"):
         self.name = name
-        self.shape_features = input_shape[1:]
+        self.shape_features = None
 
         self.layers = []
         self.L = None #Number of layers
+
+        self.epochs,self.batch_size = None,None
+        self.eta,self.lmbd = None,None
+        self.scheme = None #Initialization scheme. Defaults to normal w. var=1 if provided nothing
 
     def addLayer(self,layer):
         self.layers.append(layer)
@@ -26,12 +31,17 @@ class CNN:
         self.layers[layer].d_act = actL[1]
 
     ##-------------Initialize weights and biases------
-    def initialize_network(self, scheme=None):
-        self.L = len(self.layers)
-        self.layers[0].initialize(self.shape_features, scheme) #Need to pass the shape of previous layer to construct weights
-        for l in range(1,self.L):
-            self.layers[l].initialize(self.layers[l-1].shape, scheme)
+    def initialize_weights(self,input_shape):
+        self.shape_features = input_shape[1:]
 
+        self.L = len(self.layers)
+        self.layers[0].initialize(self.shape_features,self.scheme) #Need to pass the shape of previous layer to construct weights
+        for l in range(1,self.L):
+            self.layers[l].initialize(self.layers[l-1].shape,self.scheme)
+
+    def set_hyperparams(self,hyperparams):
+        epochs,batch_size,eta,lmbd = hyperparams
+        self.epochs,self.batch_size,self.eta,self.lmbd = epochs,batch_size,eta,lmbd
 
     ##--------------Make prediction---------------------
     def predict(self, X):
@@ -66,69 +76,20 @@ class CNN:
         # print(f"Backpropagation time: {t_end-t_start:.5f}", )
         return error_s
 
-
-
-    def update(self,X, eta, lmbd):
+    #Previous layer's activations needed for updating
+    def update(self,X):
         ##------------Update weights and biases ---------------------------------
-        self.layers[0].update(X, eta, lmbd)
+        self.layers[0].update(X, self.eta, self.lmbd)
         for l in range(1,self.L):
-            self.layers[l].update(self.layers[l-1].A, eta, lmbd)
-
-    def estimate_train_time(self, X_train, y_train, hyperparams,val_size):
-        # from sklearn.model_selection import train_test_split
-        #
-        # X_train,X_val,y_train,y_val = train_test_split(X_train,y_train,test_size=val_size)
-
-        epochs, batch_size, eta, lmbd = hyperparams
-        n_inputs = X_train.shape[0]
-        indices =np.arange(n_inputs)
-        m = n_inputs/batch_size
-        t_start = time.time()
-        print("Number of batches in 1 epoch: ", m)
-        n_batches = 10
-        # print(f"Timing {n_batches} batches = {(n_batches*batch_size)/n_inputs:.3f} epochs")
-        print(f"Timing {n_batches} batches = {n_batches/m:.3f} epochs")
-
-        for epoch in range(1):
-            t_start = time.time()
-            for i in range(n_batches):
-                batch_indices = np.random.choice(indices, batch_size, replace=False)
-                X_batch = X_train[batch_indices]
-                y_batch = y_train[batch_indices]
-                self.predict(X_batch)
-                self.backpropagate(y_batch)
-                self.update(X_batch,eta,lmbd)
-                #
-                # if(iter%iter_step==0 and evalBool==True):
-                #     y_pred = self.predict(X_val)
-                #     y_tilde = self.predict(X_train)
-                #     acc_val= accuracy(y_pred,y_val)
-                #     acc_train = accuracy(y_tilde,y_train)
-                #     acc_val_l.append(acc_val)
-                #     acc_train_l.append(acc_train)
-                #     epoch_list.append(epoch+i/m)
-                #     if(verbose):
-                #         print(f"Epoch:{epoch+i/m:.3f} train_acc:{acc_train:.4f}  val_acc:{acc_val:.4f}")
-
-                # iter+=1'
-            t_end= time.time()
-            self.initialize_network() #Undo mini-training
-
-            t_batches = t_end-t_start
-            # t_1epoch= (n_inputs/(n_batches*batch_size))*t_batches
-            t_1epoch= (m/n_batches)*t_batches
-
-            t_estimated = epochs*t_1epoch
-            return t_estimated
+            self.layers[l].update(self.layers[l-1].A, self.eta, self.lmbd)
 
 
-
-    def train(self, X_train, y_train, hyperparams, X_val=None,y_val=None,verbose=True):
-        epochs, batch_size, eta, lmbd = hyperparams
+    def train(self, X_train, y_train, X_val=None,y_val=None,verbose=True):
+        epochs, batch_size, eta, lmbd = self.epochs,self.batch_size,self.eta,self.lmbd
         n_inputs = X_train.shape[0]
         #==========Validation stuff==========
         iter = 0 #Iteration number
-        iter_step =100  #Evaluate every n'th batch
+        iter_step =int(X_train.shape[0]/batch_size)  #Evaluate every n'th batch
         evalBool = True
         if(type(X_val)!=type(X_train) or type(y_val)!=type(y_train)):
             evalBool = False #Perform no evaluations, speeds up training
@@ -148,7 +109,7 @@ class CNN:
                 y_batch = y_train[batch_indices]
                 self.predict(X_batch)
                 self.backpropagate(y_batch)
-                self.update(X_batch,eta,lmbd)
+                self.update(X_batch)
 
                 if(iter%iter_step==0 and evalBool==True):
                     y_pred = self.predict(X_val)
@@ -172,8 +133,44 @@ class CNN:
         print("======================================================================")
         return acc_val_l,acc_train_l,epoch_list,t_train
 ##==============================================================================
-##                     Visualization functions
+##                        Handy  functions
 ##==============================================================================
+    #Does not account for validation history as of now
+    def estimate_train_time(self, X_train, y_train,val_size):
+        # from sklearn.model_selection import train_test_split
+        #
+        # X_train,X_val,y_train,y_val = train_test_split(X_train,y_train,test_size=val_size)
+
+        epochs, batch_size, eta, lmbd = self.epochs,self.batch_size,self.eta,self.lmbd
+        n_inputs = X_train.shape[0]
+        indices =np.arange(n_inputs)
+        m = n_inputs/batch_size
+        t_start = time.time()
+        print("Number of batches in 1 epoch: ", m)
+        n_batches = 10
+        # print(f"Timing {n_batches} batches = {(n_batches*batch_size)/n_inputs:.3f} epochs")
+        print(f"Timing {n_batches} batches = {n_batches/m:.3f} epochs")
+
+        for epoch in range(1):
+            t_start = time.time()
+            for i in range(n_batches):
+                batch_indices = np.random.choice(indices, batch_size, replace=False)
+                X_batch = X_train[batch_indices]
+                y_batch = y_train[batch_indices]
+                self.predict(X_batch)
+                self.backpropagate(y_batch)
+                self.update(X_batch)
+
+            t_end= time.time()
+            self.initialize_weights(X_train.shape) #Undo mini-training
+
+            t_batches = t_end-t_start
+            # t_1epoch= (n_inputs/(n_batches*batch_size))*t_batches
+            t_1epoch= (m/n_batches)*t_batches
+
+            t_estimated = epochs*t_1epoch
+            return t_estimated
+
     def summary(self,errors=False):
         n_tot = 0
         sum_str = ''
@@ -238,93 +235,3 @@ class CNN:
             plt.title(f"filter {f}")
         fig.suptitle(f"layer {layer}, channel {channel}")
         #plt.show() needs to be included in main script, allowing multiple layers to be displayed at once.
-
-# #Classical way. X.shape = [n_inputs, n_features]
-# #Here the weights are indexed with rows corresponding to the neurons of the previous layer and columns corresponding to nodes of the current layer
-# class FFNN:
-#     def __init__(self, X_full, y_full, hyperparams):
-#         self.epochs,self.batch_size,self.eta,self.lmbd= hyperparams
-#
-#         self.X_full = X_full
-#         self.y_full = y_full
-#         self.n_inputs = X_full.shape[0]
-#         self.n_features = X_full.shape[1]
-#         self.n_categories = y_full.shape[1]
-#
-#         self.layers = []
-#         self.L = None #Number of layers
-#
-#     def addLayer(self,layer):
-#         self.layers.append(layer)
-#
-#     ##-------------Initialize weights and biases------
-#     def initialize_network(self):
-#         self.L = len(self.layers)
-#
-#         self.layers[0].initialize(self.X_full.shape) #Need to pass the shape of previous layer to construct weights
-#         for l in range(1,self.L):
-#             self.layers[l].initialize(self.layers[l-1].shape)
-#
-#     ##--------------Make prediction---------------------
-#     def predict(self, X):
-#         self.layers[0].feedForward(X)
-#         for l in range(1,self.L):
-#             self.layers[l].feedForward(self.layers[l-1].A)
-#
-#         return self.layers[-1].A
-#
-#
-#     def backpropagate(self,X,y):
-#         ##----------------backpropagate error--------------------------
-#         AL = self.layers[-1].A
-#
-#         deltaL = AL-y #Note that we got overflow errors when trying to implement this in the form f'(AL)*(partial C)/(partial AL)
-#
-#         self.layers[-1].delta = deltaL
-#         error_s = deltaL@self.layers[-1].W.T #Succeeding error
-#
-#         for l in range(self.L-2,-1,-1):
-#             error = self.layers[l].backpropagate(error_s)
-#             error_s = error
-#
-#
-#         # for l in range(self.L-2,-1,-1):
-#         #     self.layers[l].backpropagate(self.layers[l+1].delta,self.layers[l+1].W) #Here error(l) = delta(l+1)@W^T(l+1).
-#
-#
-#         ##------------Update weights and biases ---------------------------------
-#         self.layers[0].update(self.eta, self.lmbd, X)
-#         for l in range(1,self.L):
-#             self.layers[l].update(self.eta, self.lmbd, self.layers[l-1].A)
-#
-#
-#     def train(self):
-#         indices =np.arange(self.n_inputs)
-#         m = int(self.n_inputs/self.batch_size)
-#
-#         for epoch in range(self.epochs):
-#             for i in range(m):
-#                 batch_indices = np.random.choice(indices, self.batch_size, replace=False)
-#                 X_batch = self.X_full[batch_indices]
-#                 y_batch = self.y_full[batch_indices]
-#                 self.predict(X_batch)
-#                 self.backpropagate(X_batch,y_batch)
-#
-#         print(f"Completed training with {self.epochs} epochs")
-#
-#
-#
-#     def displayNetwork(self,errors=False):
-#
-#         print("A: " )
-#         print("-------------------------------")
-#         for l in range(self.L):
-#             print(self.layers[l].A.shape)
-#         print("-------------------------------")
-#         if(errors == True) :
-#             print("Errors: " )
-#             print("-------------------------------")
-#         for l in range(self.L):
-#             print(self.layers[l].delta.shape)
-#             print("-------------------------------")
-#             print("batch_size: ", self.batch_size)

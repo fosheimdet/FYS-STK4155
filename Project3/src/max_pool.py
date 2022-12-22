@@ -120,12 +120,6 @@ class MaxPool():
                         #We therefore sum errors that stem from the same node of the input.
                         self.delta[n,:,:,c][delta_coords]+= input[n,i,j,c]
 
-        # print("delta.shape<max>:", self.delta.shape)
-        # print("A.shape<max>:",self.A[0,:,:,0].shape)
-        # print(self.A[0,:,:,0])
-        # print("==========================================")
-        # print("delta.shape<max>:",self.delta[0,:,:,0].shape)
-        # print(self.delta[0,:,:,0])
         return self.delta
 
     def update(self,*args):
@@ -138,25 +132,7 @@ class MaxPool():
         return f'({pool_size,pool_size},{stride},"{padding}")'
 
 
-if __name__ == "__main__":
-
-
-
-
-    sum_str = ''
-    sum_str+="A: \n"
-    sum_str+="----------------------------------------------------\n"
-    sum_str+="Layer            Output shape            #Params  \n"
-    sum_str+="====================================================\n"
-    print(sum_str)
-
-    string = "My string"
-    filename="ok.txt"
-    with open('bla.txt','a') as f:
-        f.write("\n"+sum_str+"\n")
-    # with open('bla.txt', 'w') as f:
-    #     print('Filename:', filename, file=f)
-    #
+# if __name__ == "__main__":
     # a = np.arange(0,20)
     # A = a.reshape(5,4)
     # A = np.random.randint(0,20,(3,4))
