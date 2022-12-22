@@ -45,19 +45,23 @@ def plot_images(images,labels):
 #Grayscale images(28x28) of hand-written digits.
 #Contains 60k training samples, 10k test samples.
 #Original source: http://yann.lecun.com/exdb/mnist/
-def format_mnist():
+def format_mnist(plot=False):
     print("Using MNIST (28x28)")
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
     X_train,X_test = X_train[:,:,:,np.newaxis], X_test[:,:,:,np.newaxis]
     y_train,y_test =to_categorical(y_train), to_categorical(y_test)
 
-    #plot_images(X_train[30:60],y_train[30:60])
+    if(plot):
+        n_images = 30
+        indices = np.arange(0,X_train.shape[0])
+        selection = np.random.choice(indices,n_images,replace=False)
+        plot_images(X_train[selection],y_train[selection])
     return X_train,X_test,y_train,y_test
 # format_mnist()
 
 #sklearn's mnist dataset.
 #Contains 1797 8x8 images and corresponding labels. No train-test split provided.
-def format_mnist8x8():
+def format_mnist8x8(plot=False):
     print("Using MNIST (8x8)")
     dataset = sk_datasets.load_digits() #Dowload MNIST dataset (8x8 pixels)
 
@@ -68,7 +72,11 @@ def format_mnist8x8():
     y = to_categorical(y)
     X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2)
 
-    # plot_images(X_train[30:60],y_train[30:60])
+    if(plot):
+        n_images = 30
+        indices = np.arange(0,X_train.shape[0])
+        selection = np.random.choice(indices,n_images,replace=False)
+        plot_images(X_train[selection],y_train[selection])
     return X_train,X_test,y_train,y_test
 
 #format_mnist8x8()
@@ -77,7 +85,7 @@ def format_mnist8x8():
 #Images (32x32x3) of digits from house numbers taken by google street view images, ranging from 0 to 9.
 #Contains 73257 training samples, 26032 samples for testing.
 #http://ufldl.stanford.edu/housenumbers/
-def format_svhn():
+def format_svhn(plot=False):
     print("Using SVHN (32x32)")
     train = loadmat("train_32x32.mat")
     test = loadmat("test_32x32.mat")
@@ -95,7 +103,11 @@ def format_svhn():
     #==========================
     t_end=time.time()
     # print("Reformatting time: ", t_end-t_start, " s")
-
+    if(plot):
+        n_images = 30
+        indices = np.arange(0,X_train.shape[0])
+        selection = np.random.choice(indices,n_images,replace=False)
+        plot_images(X_train[selection],y_train[selection])
     return X_train,X_test,y_train,y_test
 
 

@@ -74,16 +74,64 @@ class CNN:
         for l in range(1,self.L):
             self.layers[l].update(self.layers[l-1].A, eta, lmbd)
 
+    def estimate_train_time(self, X_train, y_train, hyperparams,val_size):
+        # from sklearn.model_selection import train_test_split
+        #
+        # X_train,X_val,y_train,y_val = train_test_split(X_train,y_train,test_size=val_size)
+
+        epochs, batch_size, eta, lmbd = hyperparams
+        n_inputs = X_train.shape[0]
+        indices =np.arange(n_inputs)
+        m = n_inputs/batch_size
+        t_start = time.time()
+        print("Number of batches in 1 epoch: ", m)
+        n_batches = 10
+        # print(f"Timing {n_batches} batches = {(n_batches*batch_size)/n_inputs:.3f} epochs")
+        print(f"Timing {n_batches} batches = {n_batches/m:.3f} epochs")
+
+        for epoch in range(1):
+            t_start = time.time()
+            for i in range(n_batches):
+                batch_indices = np.random.choice(indices, batch_size, replace=False)
+                X_batch = X_train[batch_indices]
+                y_batch = y_train[batch_indices]
+                self.predict(X_batch)
+                self.backpropagate(y_batch)
+                self.update(X_batch,eta,lmbd)
+                #
+                # if(iter%iter_step==0 and evalBool==True):
+                #     y_pred = self.predict(X_val)
+                #     y_tilde = self.predict(X_train)
+                #     acc_val= accuracy(y_pred,y_val)
+                #     acc_train = accuracy(y_tilde,y_train)
+                #     acc_val_l.append(acc_val)
+                #     acc_train_l.append(acc_train)
+                #     epoch_list.append(epoch+i/m)
+                #     if(verbose):
+                #         print(f"Epoch:{epoch+i/m:.3f} train_acc:{acc_train:.4f}  val_acc:{acc_val:.4f}")
+
+                # iter+=1'
+            t_end= time.time()
+            self.initialize_network() #Undo mini-training
+
+            t_batches = t_end-t_start
+            # t_1epoch= (n_inputs/(n_batches*batch_size))*t_batches
+            t_1epoch= (m/n_batches)*t_batches
+
+            t_estimated = epochs*t_1epoch
+            return t_estimated
+
+
 
     def train(self, X_train, y_train, hyperparams, X_val=None,y_val=None,verbose=True):
         epochs, batch_size, eta, lmbd = hyperparams
         n_inputs = X_train.shape[0]
         #==========Validation stuff==========
         iter = 0 #Iteration number
-        iter_step =100  #Evaluate every iter_step
+        iter_step =100  #Evaluate every n'th batch
         evalBool = True
         if(type(X_val)!=type(X_train) or type(y_val)!=type(y_train)):
-            evalBool = False #I.e. perform no evaluations
+            evalBool = False #Perform no evaluations, speeds up training
 
         acc_val_l,acc_train_l =[],[]
         epoch_list=[] #Epochs in which the evaluations occured
@@ -118,8 +166,11 @@ class CNN:
             if(verbose):
                 print(f"Finished epoch {epoch}/{epochs} in {t_end_epoch-t_start_epoch:.3f} s.")
         t_end = time.time()
-        print(f"Completed training with {epochs} epochs in {t_end-t_start:.3f} s.")
-        return acc_val_l,acc_train_l,epoch_list
+        t_train = t_end-t_start
+        print("======================================================================")
+        print(f"      Completed training with {epochs} epochs in {t_train:.3f} s = {t_train//60:.0f}min,{t_train%60:.0f}sec.")
+        print("======================================================================")
+        return acc_val_l,acc_train_l,epoch_list,t_train
 ##==============================================================================
 ##                     Visualization functions
 ##==============================================================================

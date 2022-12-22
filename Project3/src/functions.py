@@ -2,6 +2,18 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 
 
+#Picks random samples from train and test data to quickly test our code
+def pick_sample(data,n_train,n_test):
+    X_train,X_test,y_train,y_test = data
+    indices_train = np.arange(X_train.shape[0])
+    indices_test = np.arange(X_test.shape[0])
+
+    indices_train = np.random.choice(indices_train,n_train,replace=False)
+    indices_test = np.random.choice(indices_test,n_test,replace=False)
+    
+    data = X_train[indices_train],X_test[indices_test],y_train[indices_train],y_test[indices_test]
+    return data
+
 #Splits data into number of desired partitions. Discards the remainder.
 def partition_data(X,n_part, reverse=False):
     #Partition dataset
