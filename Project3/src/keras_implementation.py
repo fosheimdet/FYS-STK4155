@@ -59,7 +59,7 @@ from model_templates import LleNet2
 
 #                     SVHN             MNIST28x28
 #Pick model (convKerasc6_32>leNet2   convKeras4_20)
-model,hyperparams = LconvKerasC6_32
+model,hyperparams = LleNet2
 
 
 epochs,batch_size,eta,lmbd = hyperparams
