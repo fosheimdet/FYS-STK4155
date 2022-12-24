@@ -39,3 +39,19 @@ These predefined models are located in model_templates.py and have been tuned to
 | finitie_diff.py  | Contains a function for testing our backpropagation implementation     |
   
 
+ex_mod = CNN(name="example")
+ex_mod.addLayer( Conv(2,(3,3),sigmoidL,padding="same") )
+ex_mod.addLayer( Flatten() )
+ex_mod.addLayer( Dense(20,sigmoidL) )
+ex_mod.addLayer( Dense(10,softmaxL) )
+
+ex_mod.scheme="Xavier" #Defaults to std.normal unless provided "He" or "Xavier"
+ex_mod.initialize_weights(X_train.shape)
+hyperparams = [200,15,0.001,1e-4] #Epochs, batch_size, eta, lmbd
+ex_mod.set_hyperparams(hyperparams)
+
+ex_mod.train(X_train,y_train)
+y_pred = ex_mod.predict(X_test)
+
+print("test accuracy of example model:", accuracy(y_pred,y_test))
+
