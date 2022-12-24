@@ -30,6 +30,7 @@ The files below are ordered roughly based on their place in the hierarchy of the
 | our_implementation.py                  | Perform training and testing using our implementation only                    |
 | keras_implementation.py                | Perform training and testing using our keras with tensorflow backend           |
 |                                                                                                         |
+|                                                                                                         |
 | model_templates.py                | Pre-defined models to be used by the two above scripts        |
 | benchmark.py  |  Functions for benchmarking the ours/keras's models      |
 | reformat_data.py  | Transforms the data to the format required by our models  |
