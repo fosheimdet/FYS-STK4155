@@ -15,11 +15,13 @@ our_implementation.py and
 keras_implementation.py 
 perform training and evaluation of predefined models from our own implementation or that of keras.
 
-These predefined models are located in model_templates.py and have been tuned to specific data sets. 
-We include a commented-out example on how to design and train a model using our implementation. 
-This is done in a similar way to Keras in order to provide some familiarity.  
+These predefined models are located in "model_templates.py" and their architecture have been tuned to specific data sets.  
+Their tuned hyperparameters are also set here, but can be altered elsewhere through model.sethypererparams().
 
-The files below are ordered roughly based on their hierarchy within the program. 
+We include a commented-out example on how to design and train a model using our implementation. 
+This is done in a similar way to Keras in order to hopefully provide some familiarity.  
+
+The files below are ordered roughly based on their place in the hierarchy of the program. 
 
 ## Files
 
