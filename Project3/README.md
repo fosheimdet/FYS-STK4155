@@ -32,7 +32,7 @@ The files below are ordered roughly based on their place in the hierarchy of the
 |                                                                                                         |
 |                                                                                                         |
 | model_templates.py                | Pre-defined models to be used by the two above scripts        |
-| benchmark.py  |  Functions for benchmarking the our/keras's models      |
+| benchmark.py  |  Functions for benchmarking our/keras's models      |
 | reformat_data.py  | Transforms the data to the format required by the models  |
 |                                                                                                               |
 |                                                                                                         |
