@@ -35,11 +35,13 @@ The files below are ordered roughly based on their place in the hierarchy of the
 | benchmark.py  |  Functions for benchmarking the ours/keras's models      |
 | reformat_data.py  | Transforms the data to the format required by our models  |
 |                                                                                                               |
+|                                                                                                         |
 | neura_network.py           | Contains the class CNN, which constructs sequential model from the provided layer instances    |
 | convolutional.py            |Contains a class for convolutional layer    |
 | max_pool.py           |Contain a class for max pool layer |
 | flatten.py           | Contain a class for flatten layer |
 | dense.py           | Contain a class for dense/fully connected layer |
+|                                                                                                         |
 |                                                                   |
 | functions.py  |  Various useful functions      |
 | activation_functions.py | Various activation functions to be used in the layers of our implementation  
