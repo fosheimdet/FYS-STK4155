@@ -124,8 +124,8 @@ class CNN:
 
                 iter+=1
             t_end_epoch = time.time()
-            if(verbose):
-                print(f"Finished epoch {epoch}/{epochs} in {t_end_epoch-t_start_epoch:.3f} s.")
+            # if(verbose):
+            #     print(f"Finished epoch {epoch}/{epochs} in {t_end_epoch-t_start_epoch:.3f} s.")
         t_end = time.time()
         t_train = t_end-t_start
         print("======================================================================")

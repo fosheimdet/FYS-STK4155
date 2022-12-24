@@ -42,7 +42,7 @@ np.random.seed(0)
 ##===================================================================================
 #                              Data preprocessing
 ##===================================================================================
-data_name="MNIST8x8"
+data_name="MNIST"
 data=(X_train,X_test,y_train,y_test)= get_data(data_name)
 #Scale data:
 X_train,X_test = X_train/255.0, X_test/255.0
@@ -51,6 +51,7 @@ X_train,X_test = X_train/255.0, X_test/255.0
 ##========================== Example ===================================
 ##Example of how to construct a model and perform training/prediction
 # print("============= Using example model ================")
+
 # ex_mod = CNN(name="example")
 # ex_mod.addLayer( Conv(2,(3,3),sigmoidL,padding="same") )
 # ex_mod.addLayer( Flatten() )
@@ -90,7 +91,7 @@ from model_templates import denseNet4_300    #Tuned to MNIST
 ##======Pick model for training/testing================
 # model = denseNet4_300
 # model = denseNet2_20
-model = convNet1_3
+model = denseNet4_300
 
 model.initialize_weights(X_train.shape)
 
@@ -106,8 +107,8 @@ model.scheme=""
 model_assessment=True #Accuracy plot from training and confusion matrix
 model_selection=False  #Gridsearch over two hyperparameters
 
-# pick (n_test,n_train) random samples for a quick test of the algo
-data=pick_sample(data,1000,1000,0)
+# pick (n_test,n_train) random samples for a quick test of the alg.
+data=pick_sample(data,1000,1000,False)
 
 val_size = 0.1 #Size of validation set
 

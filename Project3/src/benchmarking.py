@@ -77,21 +77,21 @@ def evaluate_fit(model,data,data_name,val_size=0.1):
     conf_test = confusion_matrix(y_pred,y_test)
     acc_test = accuracy(y_pred,y_test[0:y_pred.shape[0]])
 
-    write_to_file=True
-    if(write_to_file==True):
-        #Print accuracy and model used to file
-        model_summary = model.summary() #String
-        filename = "results/"+model.name+".txt"
-        with open(filename,'a') as f:
-            f.write("***************************************\n")
-            f.write(f"{data_name}\n")
-            f.write(f"Test accuracy={acc_test}\n")
-            f.write("---------------------------------------\n")
-            f.write(f"Training time: {t_train:.3f} s = {t_train//60:.0f}min,{t_train%60:.0f}sec.\n")
-            f.write(f"epochs={epochs},batch size={M}\n")
-            f.write(f"eta=   {eta},  lambda=     {lmbd}\n")
-            f.write("***************************************\n")
-            f.write(model_summary+"\n")
+    # write_to_file=True
+    # if(write_to_file==True):
+    #     #Print accuracy and model used to file
+    #     model_summary = model.summary() #String
+    #     filename = "results/"+model.name+".txt"
+    #     with open(filename,'a') as f:
+    #         f.write("***************************************\n")
+    #         f.write(f"{data_name}\n")
+    #         f.write(f"Test accuracy={acc_test}\n")
+    #         f.write("---------------------------------------\n")
+    #         f.write(f"Training time: {t_train:.3f} s = {t_train//60:.0f}min,{t_train%60:.0f}sec.\n")
+    #         f.write(f"epochs={epochs},batch size={M}\n")
+    #         f.write(f"eta=   {eta},  lambda=     {lmbd}\n")
+    #         f.write("***************************************\n")
+    #         f.write(model_summary+"\n")
 
 
     n_categories = y_test.shape[1]
@@ -227,9 +227,11 @@ def plot_accuracy_keras(model,hyperparams,data_name):
   plt.title(f"Running accuracy of '{model.name}' during training on {data_name}.\n" +
   f"$\eta={eta}$, epochs={epochs}, batch size={M}")
   plt.plot(train_accuracies, linestyle='--',
-  color =  'mediumblue', label = f"Val. acc. Max: {val_max:.3f}")
+  color =  'mediumblue', label = f"Train. acc. Max: {train_max:.3f}")
+
   plt.plot(history.history['val_accuracy'],  linestyle='-',
-  color = 'darkgreen',  label = f"Train. acc. Max: {train_max:.3f}")
+  color = 'darkgreen',  label = f"Val.acc. acc. Max: {val_max:.3f}")
+  
   plt.xlabel("Epochs")
   plt.ylabel("Accuracy")
   plt.minorticks_on()

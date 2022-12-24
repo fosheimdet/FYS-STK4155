@@ -42,18 +42,11 @@ print(X_train.shape, y_test.shape)
 
 #--------------------------------------------------------------
 #--------------------Import models-----------------------------
-
-# from model_templates import LdenseKeras1_10
-# from model_templates import LdenseKeras1_20
-# from model_templates import LdenseKeras3_128
-# from model_templates import LdenseKeras3_20
-# from model_templates import LdenseKeras4
-
 # from model_templates import LconvKeras1_3
 from model_templates import LconvKeras4_20 #tuned for MNIST
 # from model_templates import LconvKeras4_32
 # from model_templates import LconvKeras6_32
-from model_templates import LconvKerasC6_32 #tuned for SVHN
+from model_templates import LconvKeras12_32 #tuned for SVHN
 
 from model_templates import LleNet2 #tuned for SVHN
 #--------------------------------------------------------------
@@ -79,7 +72,7 @@ model.compile(loss = categorical_crossentropy,
             metrics = ['accuracy'])
 
 #Perform mini run with a subset of the data   (n_train,n_test)
-X_train,X_test,y_train,y_test = pick_sample(data,1000,1000,sample=False)
+X_train,X_test,y_train,y_test = pick_sample(data,1000,1000,sample=True)
 
 
 n_train = X_train.shape[0]
