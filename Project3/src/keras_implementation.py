@@ -33,15 +33,16 @@ def get_data(dataset,plot):
 
 # data_name = "MNIST8x8"
 #data_name="MNIST"
-data_name = "SVHN"
+data_name = "MNIST"
 
 data=(X_train,X_test,y_train,y_test)= get_data(data_name,plot=False)
 X_train,X_test = X_train/255.0, X_test/255.0 #Normalize pixel values to be between 0 and 1 by dividing by 255.
 
 print(X_train.shape, y_test.shape)
 
-#==============================================
-#--------------Import models------------------
+#--------------------------------------------------------------
+#--------------------Import models-----------------------------
+
 # from model_templates import LdenseKeras1_10
 # from model_templates import LdenseKeras1_20
 # from model_templates import LdenseKeras3_128
@@ -49,17 +50,17 @@ print(X_train.shape, y_test.shape)
 # from model_templates import LdenseKeras4
 
 # from model_templates import LconvKeras1_3
-from model_templates import LconvKeras4_20
+from model_templates import LconvKeras4_20 #tuned for MNIST
 # from model_templates import LconvKeras4_32
 # from model_templates import LconvKeras6_32
-from model_templates import LconvKerasC6_32
+from model_templates import LconvKerasC6_32 #tuned for SVHN
 
-from model_templates import LleNet2
-#--------------------------------------------
+from model_templates import LleNet2 #tuned for SVHN
+#--------------------------------------------------------------
 
-#                     SVHN             MNIST28x28
+
 #Pick model (convKerasc6_32>leNet2   convKeras4_20)
-model,hyperparams = LleNet2
+model,hyperparams = LconvKeras4_20
 
 
 epochs,batch_size,eta,lmbd = hyperparams
@@ -92,6 +93,7 @@ val_size = 0.1
 X_train,X_val,y_train,y_val = train_test_split(X_train,y_train,test_size=val_size)
 
 
+#Fit the model
 t_start = time.time()
 model.fit(X_train, y_train, epochs = epochs, batch_size = batch_size,
                       steps_per_epoch = X_train.shape[0]//batch_size,
@@ -104,7 +106,9 @@ print("======================================================================")
 print(f"      Completed training with {epochs} epochs in {t_train:.3f} s = {t_train//60:.0f}min,{t_train%60:.0f}sec.")
 print("======================================================================")
 
+#Plot the running accuracy during training
 plot_accuracy_keras(model,hyperparams,data_name)
+# Make prediction and corresponding confusion matrix
 y_pred = model.predict(X_test)
 confusion_matrix_keras(model,X_test,y_test,hyperparams,data_name)
 plt.show()

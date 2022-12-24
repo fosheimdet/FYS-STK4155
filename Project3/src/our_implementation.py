@@ -47,18 +47,45 @@ data=(X_train,X_test,y_train,y_test)= get_data(data_name)
 #Scale data:
 X_train,X_test = X_train/255.0, X_test/255.0
 
+##======================================================================
+##========================== Example ===================================
+##Example of how to construct a model and perform training/prediction
+# print("============= Using example model ================")
+# ex_mod = CNN(name="example")
+# ex_mod.addLayer( Conv(2,(3,3),sigmoidL,padding="same") )
+# ex_mod.addLayer( Flatten() )
+# ex_mod.addLayer( Dense(20,sigmoidL) )
+# ex_mod.addLayer( Dense(10,softmaxL) )
+#
+# ex_mod.scheme="Xavier" #Defaults to std.normal unless provided "He" or "Xavier"
+# ex_mod.initialize_weights(X_train.shape)
+# hyperparams = [100,15,0.001,1e-4] #Epochs, batch_size, eta, lmbd
+# ex_mod.set_hyperparams(hyperparams)
+#
+# ex_mod.train(X_train,y_train)
+# y_pred = ex_mod.predict(X_test)
+#
+# print("test accuracy of example model:", accuracy(y_pred,y_test))
+##======================================================================
+##======================================================================
 
-#--------------Import models------------------
+
+##==============================================================================
+#                           Train and evaluate
+##==============================================================================
+
+#----------------------Import models-----------------------------
+#----------------------------------------------------------------
 # from model_templates import shallow_dense
 # from model_templates import denseNet1_10
 # from model_templates import denseNet1_20
-from model_templates import denseNet2_20
+from model_templates import denseNet2_20     #Tuned to MNIST8x8
 
 #from model_templates import denseNet3_128
-from model_templates import convNet1_3
+from model_templates import convNet1_3       #Tuned to MNIST8x8
 # from model_templates import denseNet3_128
-from model_templates import denseNet4_300
-#-------------------------------------------
+from model_templates import denseNet4_300    #Tuned to MNIST
+#-----------------------------------------------------------------
 
 ##======Pick model for training/testing================
 # model = denseNet4_300

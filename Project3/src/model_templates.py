@@ -49,7 +49,7 @@ from activation_functions import*
 # denseNet1_20.set_hyperparams(hyperparams)
 # denseNet1_20.scheme="Xavier"
 ##============================================================================
-##===================== denseNet2_20 =========================================
+##===================== denseNet2_20(MNIST8x8) ===============================
 ##============================================================================
 denseNet2_20 = CNN(name="denseNet2_20")
 denseNet2_20.addLayer( Flatten() )
@@ -73,7 +73,7 @@ denseNet2_20.scheme=""
 # denseNet3_128.set_hyperparams(hyperparams)
 # denseNet3_128.scheme=""
 ##============================================================================
-##===================== denseNet4_300 ========================================
+##===================== denseNet4_300(MNIST) =================================
 ##============================================================================
 act = tanhL
 denseNet4_300 = CNN(name="denseNet4_300")
@@ -100,7 +100,7 @@ denseNet4_300.scheme=""
 # conv.addLayer( Dense(10,softmaxL) )
 # conv.initialize_weights()
 ##============================================================================
-##===================== convNet1_3 ===========================================
+##===================== convNet1_3(MNIST8x8) =================================
 ##============================================================================
 convNet1_3 = CNN(name="convNet1_3")
 convNet1_3.addLayer (Conv(3,(3,3),sigmoidL,padding="same"))
@@ -161,13 +161,13 @@ convNet1_3.scheme = ""
 # LconvKeras1_3 = [convKeras1_3,hyperparams]
 
 ##============================================================================
-##===================== convKeras4_20 ========================================
+##===================== convKeras4_20(MNIST) =================================
 ##============================================================================
 convKeras4_20= models.Sequential(name='convKeras4_20')
 convKeras4_20.add(layers.Conv2D(20,(3,3),activation='sigmoid'))
 convKeras4_20.add(layers.MaxPooling2D((2, 2)))
 convKeras4_20.add(layers.Conv2D(20, (3, 3), activation='sigmoid'))
-convKeras4_20.add(layers.MaxPooling2D((2, 2)))
+convKeras4_20.add(layers.MaxPooling2D((2, 2),padding="same"))
 convKeras4_20.add(layers.Flatten())
 convKeras4_20.add(layers.Dense(128,activation="sigmoid"))
 convKeras4_20.add(layers.Dense(10, activation='softmax'))
@@ -207,7 +207,7 @@ LconvKeras4_20 = [convKeras4_20,hyperparams]
 
 
 ##============================================================================
-##===================== convKerasC6_32 =======================================
+##===================== convKerasC6_32(SVHN) =================================
 ##============================================================================
 pad_mode = "same"
 act = "relu"
@@ -251,7 +251,7 @@ LconvKerasC6_32 = [convKerasC6_32,hyperparams]
 ##=================================================================
 
 ##============================================================================
-##===================== LeNet2 ===============================================
+##===================== LeNet2(SVHN) ===============================================
 ##============================================================================
 pad_mode="same"
 act = "tanh"
@@ -261,9 +261,9 @@ leNet2.add(layers.MaxPooling2D((2, 2)))
 leNet2.add(layers.Conv2D(32, (3, 3), activation=act,padding = pad_mode))
 leNet2.add(layers.MaxPooling2D((2, 2)))
 leNet2.add(layers.Conv2D(64, (3, 3), activation=act,padding = pad_mode))
-leNet2.add(layers.MaxPooling2D((2, 2)))
+leNet2.add(layers.MaxPooling2D((2, 2),padding="same"))
 leNet2.add(layers.Conv2D(120, (3, 3), activation=act,padding = pad_mode))
-leNet2.add(layers.MaxPooling2D((2, 2)))
+leNet2.add(layers.MaxPooling2D((2, 2),padding="same"))
 leNet2.add(layers.Flatten())
 leNet2.add(layers.Dense(128, activation = act))
 leNet2.add(layers.Dense(10, activation = 'softmax'))
