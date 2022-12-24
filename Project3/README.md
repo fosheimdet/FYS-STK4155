@@ -6,7 +6,8 @@ in classifying images of digits from 0 to 9.
 Three data sets are used for this purpose, namely MNIST(8x8) provided by sklearn, MNIST(28x28) provided through keras and 
 SVHN(32x32x3). 
 
-The SVHN (Street View Housing Numbers) dataset is found at: http://ufldl.stanford.edu/housenumbers/. 
+The SVHN (Street View Housing Numbers) dataset is found at: http://ufldl.stanford.edu/housenumbers/
+
 train_32x32.mat and test_32x32.mat must be dowloaded and included in the same directory as reformat_data.py
 
 The scipts 
