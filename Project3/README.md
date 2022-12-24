@@ -28,15 +28,15 @@ The files below are ordered roughly based on their place in the hierarchy of the
 | File                        | Content                                                                                 |
 |-----------------------------|-----------------------------------------------------------------------------------------|
 | our_implementation.py                  | Perform training and testing using our implementation only                    |
-| keras_implementation.py                | Perform training and testing using our keras with tensorflow backend           |
+| keras_implementation.py                | Perform training and testing using keras with tensorflow backend           |
 |                                                                                                         |
 |                                                                                                         |
 | model_templates.py                | Pre-defined models to be used by the two above scripts        |
-| benchmark.py  |  Functions for benchmarking the ours/keras's models      |
-| reformat_data.py  | Transforms the data to the format required by our models  |
+| benchmark.py  |  Functions for benchmarking the our/keras's models      |
+| reformat_data.py  | Transforms the data to the format required by the models  |
 |                                                                                                               |
 |                                                                                                         |
-| neura_network.py           | Contains the class CNN, which constructs sequential model from the provided layer instances    |
+| neura_network.py           | Contains the class CNN, which constructs a feed-forward/sequential model from layer instances    |
 | convolutional.py            |Contains a class for convolutional layer    |
 | max_pool.py           |Contain a class for max pool layer |
 | flatten.py           | Contain a class for flatten layer |
