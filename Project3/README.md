@@ -11,9 +11,9 @@ The SVHN (Street View Housing Numbers) dataset is found at: http://ufldl.stanfor
 train_32x32.mat and test_32x32.mat must be dowloaded and included in the same directory as reformat_data.py
 
 The scipts 
-our_implementation.py and 
-keras_implementation.py 
-perform training and evaluation of predefined models from our own implementation or that of keras.
+"our_implementation.py" and 
+"keras_implementation.py" 
+perform training and evaluation of predefined models from our own implementation or that of keras. Data set is chosen here and hyperparameters can be adjusted. To perform a quick test that everything is working, the function "get_sample()" picks a random sample of specified size from the training and test data to run on. Its optional parameter must be set to "False" to run through the entire dataset. 
 
 These predefined models are located in "model_templates.py" and their architecture have been tuned to specific data sets.  
 Their tuned hyperparameters are also set here, but can be altered elsewhere through model.sethypererparams().
