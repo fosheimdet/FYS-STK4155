@@ -13,12 +13,12 @@ train_32x32.mat and test_32x32.mat must be dowloaded and included in the same di
 The scipts 
 "our_implementation.py" and 
 "keras_implementation.py" 
-perform training and evaluation of predefined models from our own implementation or that of keras. Data set is chosen here and hyperparameters can be adjusted. To perform a quick test that everything is working, the function "get_sample()" picks a random sample of specified size from the training and test data to run on. Its optional parameter must be set to "False" to run through the entire dataset. 
+perform training and evaluation of prespecified models from our own implementation or that of keras. The data set is chosen here and hyperparameters can be adjusted. To perform a quick test that everything is working, the function "get_sample()" picks a random sample of specified size from the full data set to use in its stead. Its optional parameter must be set to "True" this test-run to occur. 
 
-These predefined models are located in "model_templates.py" and their architecture have been tuned to specific data sets.  
-Their tuned hyperparameters are also set here, but can be altered elsewhere through model.sethypererparams().
+The aformentioned prespecified models are located in "model_templates.py" and their architecture have been tuned to specific data sets.  
+Their tuned hyperparameters are also set here, but can be altered elsewhere through "model.sethypererparams()".
 
-We include a commented-out example on how to design and train a model using our implementation. 
+We include a commented-out example on how to design and train a model using our implementation in "our_implementation.py". 
 This is done in a similar way to Keras in order to hopefully provide some familiarity.  
 
 The files below are ordered roughly based on their place in the hierarchy of the program. 
