@@ -18,4 +18,4 @@
   
 
 franke_regression.py and breast_cancer.py contain the bool "modelSelection", which can be set to True to perform
-a grid search over two specified variables or False to perform model assessment. 
+a grid-search over two specified variables or to False to perform model assessment. 
